@@ -13,3 +13,6 @@ test('公开安卓构建不覆盖连接配置，未配置更新有提示且保�
 test('部署占位访问码不能启动真实接口',()=>{
  const {createServer}=require('../cloud/server.cjs');assert.throws(()=>createServer({token:'GENERATE_AT_LEAST_32_RANDOM_CHARACTERS'}),/不要使用示例占位值/);
 });
+test('公开锁文件只引用官方npm下载地址，避免本机镜像缓存掩盖失效下载',()=>{
+ const lock=JSON.parse(fs.readFileSync(path.join(__dirname,'../cloud/package-lock.json'),'utf8'));const packages=Object.values(lock.packages).filter(x=>x.resolved);assert.ok(packages.length>0);for(const item of packages)assert.ok(item.resolved.startsWith('https://registry.npmjs.org/'),item.resolved);
+});
