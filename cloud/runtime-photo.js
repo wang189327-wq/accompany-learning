@@ -1,0 +1,1 @@
+$('largePhoto').src=im.url;$('downloadPhoto').href='#';$('downloadPhoto').onclick=async event=>{event.preventDefault();if(role!=='teacher')return;try{download(await Cloud.imageBlob(im.uploadId),im.name||'作业图片.jpg');}catch(err){toast(err.message);}};

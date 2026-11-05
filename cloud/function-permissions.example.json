@@ -1,0 +1,18 @@
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["ots:GetRow", "ots:GetRange", "ots:PutRow"],
+      "Resource": [
+        "acs:ots:cn-hangzhou:替换为阿里云账号UID:instance/替换为实际实例名称/table/c9_tasks",
+        "acs:ots:cn-hangzhou:替换为阿里云账号UID:instance/替换为实际实例名称/table/c9_records"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["oss:GetObject", "oss:PutObject"],
+      "Resource": ["acs:oss:*:*:替换为实际Bucket名称/*"]
+    }
+  ]
+}

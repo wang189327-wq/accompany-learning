@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cn.c9.studyplan" android:versionCode="54" android:versionName="3.1">
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
+    <uses-permission android:name="android.permission.INTERNET" /><uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <application android:label="伴学记录" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:theme="@style/AppTheme" android:allowBackup="false" android:usesCleartextTraffic="false" android:supportsRtl="true" android:enableOnBackInvokedCallback="false">
+        <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="fullUser" android:resizeableActivity="true" android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden" android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    <provider android:name=".UpdateProvider" android:authorities="cn.c9.studyplan.updates" android:exported="false" android:grantUriPermissions="true" /><receiver android:name=".TodayWidget" android:exported="false" android:label="@string/widget_empty_name"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /><action android:name="android.intent.action.DATE_CHANGED" /><action android:name="android.intent.action.TIME_SET" /><action android:name="android.intent.action.TIMEZONE_CHANGED" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/today_widget_info" /></receiver><service android:name=".WidgetRefreshService" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="true" /><service android:name=".TodayWidgetListService" android:permission="android.permission.BIND_REMOTEVIEWS" android:exported="false" /></application>
+</manifest>
+

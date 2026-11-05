@@ -1,0 +1,22 @@
+{
+  "name": "banxue-record-cloud",
+  "version": "1.0.0",
+  "private": true,
+  "description": "伴学记录阿里云函数计算后端",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.cjs",
+    "test": "node --test tests/*.test.cjs"
+  },
+  "dependencies": {
+    "ali-oss": "6.23.0",
+    "tablestore": "5.6.5"
+  },
+  "license": "MIT",
+  "overrides": {
+    "protobufjs": "7.6.6",
+    "qs": "6.17.1"
+  }
+}

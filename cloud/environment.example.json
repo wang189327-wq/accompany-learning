@@ -1,0 +1,13 @@
+{
+  "C9_ACCESS_TOKEN": "GENERATE_AT_LEAST_32_RANDOM_CHARACTERS",
+  "C9_TABLESTORE_INSTANCE": "替换为实际实例名称",
+  "C9_TABLESTORE_ENDPOINT": "https://替换为实际实例名称.cn-hangzhou.ots.aliyuncs.com",
+  "C9_TASK_TABLE": "c9_tasks",
+  "C9_RECORD_TABLE": "c9_records",
+  "C9_OSS_REGION": "oss-cn-hangzhou",
+  "C9_OSS_BUCKET": "替换为实际Bucket名称",
+  "C9_ALLOWED_ORIGINS": "https://localhost,http://localhost",
+  "TZ": "Asia/Shanghai",
+  "C9_AI_WORKER_TOKEN": "GENERATE_ANOTHER_RANDOM_TOKEN_IF_USING_AI",
+  "C9_OSS_INTERNAL": "true"
+}

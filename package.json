@@ -1,0 +1,17 @@
+{
+  "name": "banxue-record",
+  "version": "3.1.0",
+  "private": true,
+  "description": "伴学记录：双人学习任务、资料、成绩与可选AI点评",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "node cloud/build.cjs",
+    "build:web": "node scripts/build-web.cjs",
+    "package:cloud": "node cloud/package.cjs",
+    "dev": "node scripts/dev.cjs",
+    "test": "node scripts/test.cjs",
+    "test:apk": "node --test android/asset-paths.test.cjs",
+    "check:public": "node scripts/check-public.cjs"
+  }
+}

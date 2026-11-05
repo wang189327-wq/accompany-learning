@@ -1,0 +1,4 @@
+'use strict';
+const REQUIRED=["storage","tasks","records","library","grade","startup","clock","testmode","update","connection","submission-context","photo"];
+async function assembleRuntime(source,read){const seen=new Set();const pattern=/\/\* @runtime-begin ([a-z-]+) \*\/([\s\S]*?)\/\* @runtime-end \1 \*\//g;const matches=[...source.matchAll(pattern)];for(const match of matches){if(seen.has(match[1])||!REQUIRED.includes(match[1]))throw Error('重复或未知适配区 '+match[1]);seen.add(match[1]);}for(const name of REQUIRED)if(!seen.has(name))throw Error('缺少适配区 '+name);let out='',last=0;for(const match of matches){out+=source.slice(last,match.index)+await read(match[1]);last=match.index+match[0].length;}out+=source.slice(last);if(out.includes('@runtime-'))throw Error('适配区标记不完整');return out;}
+module.exports={assembleRuntime,REQUIRED};
