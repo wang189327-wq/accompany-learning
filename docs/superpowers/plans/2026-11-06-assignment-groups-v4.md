@@ -29,6 +29,6 @@
 - [x] 新增可搜索任务选择器和发布任务表单；本地preferences持久化及云端适配；作业发布/修改和作业档案筛选；测试选择、交集和清空。
 - [x] 用户可见原任务文案改作业，隐藏轮次编码保留日期；更新小组件与双端角色流程；回归旧业务测试并新增4.0页面检查。
 - [x] 同步构建脚本/版本/部署说明，构建公开版和自用版，格式、完整测试、浏览器、资源及公开扫描；独立审阅关键兼容路径。
-- [ ] 发布GitHub，校验远端提交；分别更新GitHub源码副本和自用4.0完整交付，保存报告、原签名核对及SHA-256清单。
+- [x] 发布GitHub，校验远端提交；分别更新GitHub源码副本和自用4.0完整交付，保存报告、原签名核对及SHA-256清单。
 
 Each task cycle: first add behavior assertions, confirm failure, implement the boundary, rerun focused and full regression, commit verified changes. Physical-device installation remains distinct from local browser/bridge checks.

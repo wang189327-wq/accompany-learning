@@ -309,7 +309,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       ),
       false,
     );
-    await ev("document.querySelector('#detailDialog').close()");
+    await ev("document.querySelector('[data-period-note]').click()");
+    assert.equal(
+      await ev("document.querySelector('#roundNoteTitle').textContent"),
+      '周期重复提交测试',
+    );
+    await ev(
+      "document.querySelector('#roundNoteDialog').close();document.querySelector('#detailDialog').close()",
+    );
     // Remove only this synthetic QA assignment so existing fixture assertions remain stable.
     memory.tasks.delete(linked.id);
     await ev('refresh()');

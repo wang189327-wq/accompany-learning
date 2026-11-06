@@ -2027,7 +2027,7 @@ function editRoundNote(key) {
   roundNoteDraft = { taskId: task.id, round: key, expected: task.revision };
   $('roundNoteCaption').textContent = periodNoteName(task);
   $('roundNoteText').value = M.roundNote(task, key);
-  $('roundNoteTitle').textContent = task.name + ' · ' + key;
+  $('roundNoteTitle').textContent = task.name;
   $('roundNoteError').textContent = '';
   $('roundNoteDialog').showModal();
 }
