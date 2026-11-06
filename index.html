@@ -30,13 +30,14 @@
     </main>
     <dialog id="formDialog">
       <div class="dialogHead">
-        <h3 id="formTitle">发布任务</h3>
+        <h3 id="formTitle">发布作业</h3>
         <button data-close="formDialog">关闭</button>
       </div>
       <form id="taskForm">
+        <div id="assignmentGroupField"></div>
         <div class="fields">
           <label class="full"
-            >任务名称<input id="name" required placeholder="例如：每周阅读总结" /></label
+            >作业名称<input id="name" required placeholder="例如：每周阅读总结" /></label
           ><label
             >学科<select id="subject">
               <option value="">请选择学科</option>
@@ -67,9 +68,9 @@
               <option value="false">否</option>
             </select></label
           ><label
-            >任务类型<select id="kind">
-              <option value="recurring">周期任务</option>
-              <option value="once">单次任务</option>
+            >作业类型<select id="kind">
+              <option value="recurring">周期作业</option>
+              <option value="once">单次作业</option>
             </select></label
           ><label id="ruleLabel"
             >周期规则<select id="rule">
@@ -119,7 +120,7 @@
         </div>
         <div id="teacherTaskFields">
           <label
-            >任务备注（仅老师可编辑）<textarea
+            >作业备注（仅老师可编辑）<textarea
               id="taskNote"
               rows="2"
               placeholder="可不填写"
@@ -147,7 +148,7 @@
               </select></label
             >
           </div>
-          <p class="muted">单次任务按截止时间，周期任务按每轮结束时间；每轮最多提醒一次。</p>
+          <p class="muted">单次作业按截止时间，周期作业按每轮结束时间；每轮最多提醒一次。</p>
         </div>
         <p class="hidden" id="editHint"></p>
         <div class="error" id="formError"></div>
@@ -303,6 +304,8 @@
     </dialog>
     <!-- @build:scripts:begin -->
     <script src="model.js"></script>
+    <script src="assignment-groups.js"></script>
+    <script src="assignment-groups-ui.js"></script>
     <script src="attachment-cache.js"></script>
     <script src="study-model.js"></script>
     <script src="library-views.js"></script>

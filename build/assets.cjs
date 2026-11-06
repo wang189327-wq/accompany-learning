@@ -5,6 +5,8 @@ const BROWSER_SCRIPTS = [
   'runtime-config.js',
   'startup-watch.js',
   'model.js',
+  'assignment-groups.js',
+  'assignment-groups-ui.js',
   'attachment-cache.js',
   'cloud-client.js',
   'study-model.js',

@@ -68,6 +68,12 @@ function createService(store, objects, clock = Date.now) {
     },
   );
   const extras = require('./extras.cjs').createExtras(store, objects, clock, M, fail);
+  const assignmentGroups = require('./assignment-groups.cjs').createAssignmentGroups(
+    store,
+    clock,
+    M,
+    fail,
+  );
   function libraryRole(who) {
     if (!['student', 'teacher'].includes(who)) fail(403, '请选择学生或老师身份');
   }
@@ -88,7 +94,7 @@ function createService(store, objects, clock = Date.now) {
   }
   async function taskGet(taskId) {
     const t = await store.getTask(id(taskId));
-    if (!t) fail(404, '任务不存在');
+    if (!t) fail(404, '作业不存在');
     return t;
   }
   async function materialize(task, roundKey, knownMeta = undefined) {
@@ -233,7 +239,7 @@ function createService(store, objects, clock = Date.now) {
           JSON.stringify({
             task: original,
             archivedAt: clock(),
-            reason: '用户要求移除测试任务历史',
+            reason: '用户要求移除测试作业历史',
           }),
         ),
         'application/json',
@@ -319,6 +325,7 @@ function createService(store, objects, clock = Date.now) {
     clock,
     M,
     extras,
+    assignmentGroups,
     taskGet,
     visibleTask,
     libraryRole,
@@ -329,6 +336,7 @@ function createService(store, objects, clock = Date.now) {
   });
   return {
     ...taskService,
+    publishAssignmentGroup: assignmentGroups.publish,
     requestReview: reviews.requestReview,
     reviewStatus: reviews.reviewStatus,
     reviewWorkerPoll: reviews.workerPoll,
@@ -365,6 +373,7 @@ function createService(store, objects, clock = Date.now) {
             my: await extras.backup(),
             created: clock(),
             tasks: ts,
+            assignmentGroups: await assignmentGroups.list(),
             records: rs,
             library: await libraryList(),
             taskOrders: await Promise.all(
@@ -420,11 +429,13 @@ function createService(store, objects, clock = Date.now) {
       return {
         ...(await extras.snapshot(ts, messageRecords)),
         taskOrders,
+        assignmentGroups: await assignmentGroups.list(),
         tasks: ts.map(visibleTask),
         records: rs,
         recordsPartial: since !== null,
         library: await Promise.all(migrated.library.map(libraryExpanded)),
         features: {
+          assignmentGroups: true,
           folderDelete: true,
           historyCleanup: true,
           disabledAutoCalendar: true,
@@ -577,10 +588,10 @@ function createService(store, objects, clock = Date.now) {
     async beginUpload(body, who) {
       role(who, 'student');
       const t = await taskGet(body.taskId);
-      if (t.deletedAt || !t.enabled) fail(409, '任务已停用或删除');
+      if (t.deletedAt || !t.enabled) fail(409, '作业已停用或删除');
       if (!['image', 'text', 'file'].includes(body.kind)) fail(400, '上传类型无效');
       if (t.format === 'auto') fail(400, '默认打卡无需上传');
-      if (t.format !== body.kind) fail(400, '上传形式与任务不一致');
+      if (t.format !== body.kind) fail(400, '上传形式与作业不一致');
       if (!Number.isSafeInteger(body.size) || body.size < 1) fail(400, '文件为空或大小无效');
       const contentType =
         body.kind === 'text'
@@ -666,15 +677,15 @@ function createService(store, objects, clock = Date.now) {
       const uploads = [];
       for (const uploadId of body.uploadIds) {
         const u = await uploadGet(uploadId);
-        if (!u.ready || u.taskId !== t.id) fail(400, '作业文件尚未上传完成或属于其他任务');
+        if (!u.ready || u.taskId !== t.id) fail(400, '作业文件尚未上传完成或属于其他作业');
         uploads.push(u);
       }
       if (t.format === 'text' && (uploads.length !== 1 || uploads[0].kind !== 'text'))
-        fail(400, '文字任务必须上传作业内容');
+        fail(400, '文字作业必须上传作业内容');
       if (t.format === 'image' && (!uploads.length || uploads.some((u) => u.kind !== 'image')))
-        fail(400, '图片任务必须上传作业图片');
+        fail(400, '图片作业必须上传作业图片');
       if (t.format === 'file' && (!uploads.length || uploads.some((u) => u.kind !== 'file')))
-        fail(400, '文件任务必须上传作业文件');
+        fail(400, '文件作业必须上传作业文件');
       const text = t.format === 'text' ? (await objects.get(uploads[0].key)).toString('utf8') : '';
       const images =
         t.format === 'image'
@@ -706,10 +717,10 @@ function createService(store, objects, clock = Date.now) {
         if (same[1].hash !== hash) fail(409, '同一次请求内容不同，请重新打开提交');
         return expanded(await materialize(t, same[0]));
       }
-      if (t.kind === 'once' && refs[body.round]) fail(409, '单次任务已经提交，不能修改');
+      if (t.kind === 'once' && refs[body.round]) fail(409, '单次作业已经提交，不能修改');
       const slot = refs[body.round] ? body.round + '~' + body.requestId : body.round;
-      if (t.deletedAt || !t.enabled) fail(409, '任务已停用或删除，不能提交');
-      if (t.revision !== body.taskRevision) fail(409, '任务已变更，请刷新后重新提交');
+      if (t.deletedAt || !t.enabled) fail(409, '作业已停用或删除，不能提交');
+      if (t.revision !== body.taskRevision) fail(409, '作业已变更，请刷新后重新提交');
       const record = M.submission(
         t,
         body.round,
@@ -772,7 +783,7 @@ function createService(store, objects, clock = Date.now) {
           ref = entry?.[1];
         if (ref?.requestId === body.requestId && ref.hash === hash)
           return expanded(await materialize(latest, entry[0]));
-        fail(409, '任务或本轮成果已变更，请刷新');
+        fail(409, '作业或本轮成果已变更，请刷新');
       }
       return expanded(await materialize(updated, slot));
     },

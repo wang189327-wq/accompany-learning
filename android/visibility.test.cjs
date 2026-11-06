@@ -40,6 +40,8 @@ async function fixture() {
     return elements.get(id);
   };
   const context = vm.createContext({
+    AssignmentGroups: require('../assignment-groups.js'),
+    AssignmentGroupsUI: { create: () => ({ html: () => '', reset() {}, value: () => null }) },
     MyUI: {
       unread() {
         return 0;
@@ -155,7 +157,7 @@ test('students cannot see deleted tasks through history, filters or counts; teac
     'searchName="已删";searchSubject="语文";historyResults()',
     f.context,
   );
-  assert(result.includes('共 0 个任务'));
+  assert(result.includes('共 0 个作业'));
   result = vm.runInContext('role="teacher";historyResults()', f.context);
   assert(result.includes('已删文字'));
   assert(!result.includes('已删图片'));

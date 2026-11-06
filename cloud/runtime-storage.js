@@ -9,6 +9,7 @@ async function refresh() {
   if (!snapshot.features?.my || !snapshot.features?.messages)
     throw Error('请先部署 v1.6.0 云端接口，再使用新版界面');
   tasks = snapshot.tasks;
+  assignmentGroups = snapshot.assignmentGroups || [];
   records = snapshot.records;
   cloudFeatures = snapshot.features || {};
   MyUI.set(snapshot.preferences || [], snapshot.messages || []);

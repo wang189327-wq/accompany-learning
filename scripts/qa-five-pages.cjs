@@ -61,7 +61,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   if (apkMode) {
     const zip = await require('../zip-reader.js').loadAsync(
       await fs.readFile(
-        process.env.C9_QA_APK_PATH || path.join(__dirname, '../android/release/伴学记录-v3.1.apk'),
+        process.env.C9_QA_APK_PATH || path.join(__dirname, '../android/release/伴学记录-v4.0.apk'),
       ),
     );
     const native = await fs.readFile(
@@ -222,6 +222,100 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       mobile: true,
     });
     const checked = [];
+    // 4.0 uses a searchable ID-backed task picker while keeping assignments independent.
+    await ev(
+      "document.querySelector('#newAssignmentGroup').click();document.querySelector('#assignmentGroupName').value='英语阅读提升';document.querySelector('#assignmentGroupSubject').value='英语';document.querySelector('#assignmentGroupSemester').value='七年级上学期';document.querySelector('#assignmentGroupForm').requestSubmit()",
+    );
+    await until(
+      "!document.querySelector('#assignmentGroupDialog').open && assignmentGroups.length===1",
+    );
+    const groupId = await ev('assignmentGroups[0].id');
+    await ev(
+      "document.querySelector('#newTask').click();document.querySelector('#formAssignmentGroup').focus();document.querySelector('#formAssignmentGroup').value='阅读';document.querySelector('#formAssignmentGroup').dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('#formAssignmentGroup').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}))",
+    );
+    assert.equal(await ev("groupUI.value('formAssignmentGroup')"), groupId);
+    await ev(
+      "document.querySelector('#formAssignmentGroup').focus();document.querySelector('#formAssignmentGroup').value='未点选的词';document.querySelector('#formAssignmentGroup').dispatchEvent(new Event('input',{bubbles:true}))",
+    );
+    assert.equal(
+      await ev(
+        "(()=>{try{groupUI.value('formAssignmentGroup');return false}catch(e){return e.message.includes('点选')}})()",
+      ),
+      true,
+    );
+    await ev("document.querySelector('#formDialog').close()");
+    await ev(
+      "document.querySelector('#newTask').click();document.querySelector('#name').value='关联阅读作业';document.querySelector('#formAssignmentGroup').focus();document.querySelector('#formAssignmentGroup').value='阅读';document.querySelector('#formAssignmentGroup').dispatchEvent(new Event('input',{bubbles:true}))",
+    );
+    assert.ok(
+      await ev(
+        "document.querySelector('#formAssignmentGroup-options').textContent.includes('英语阅读提升')",
+      ),
+    );
+    await ev(
+      'document.querySelector(\'[data-group-choice=formAssignmentGroup][data-value="' +
+        groupId +
+        "\"]').click();document.querySelector('#subject').value='数学';document.querySelector('#taskSemester').value='八年级上学期';document.querySelector('#taskForm').requestSubmit()",
+    );
+    await until(
+      "!document.querySelector('#formDialog').open && tasks.some(t=>t.name==='关联阅读作业')",
+    );
+    const linked = await ev("tasks.find(t=>t.name==='关联阅读作业')");
+    assert.equal(linked.assignmentGroupId, groupId);
+    assert.equal(linked.subject, '数学');
+    assert.equal(linked.semester, '八年级上学期');
+    await ev(
+      "document.querySelector('[data-tab=history]').click();document.querySelector('#historyGroup').focus();document.querySelector('#historyGroup').value='阅读';document.querySelector('#historyGroup').dispatchEvent(new Event('input',{bubbles:true}));document.querySelector('[data-group-choice=historyGroup][data-value=\"" +
+        groupId +
+        '"]\').click()',
+    );
+    assert.equal(await ev("document.querySelectorAll('#historyResults .taskCard').length"), 1);
+    assert.ok(
+      await ev("document.querySelector('#historyResults').textContent.includes('关联阅读作业')"),
+    );
+    await ev(
+      "document.querySelector('#historySubject').value='英语';document.querySelector('#historySubject').dispatchEvent(new Event('change',{bubbles:true}))",
+    );
+    assert.equal(await ev("document.querySelectorAll('#historyResults .taskCard').length"), 0);
+    await ev(
+      "document.querySelector('#clearFilters').click();document.querySelector('#historyGroup').focus();document.querySelector('[data-group-choice=historyGroup][data-value=__unlinked__]').click()",
+    );
+    assert.equal(await ev("document.querySelectorAll('#historyResults .taskCard').length"), 2);
+    for (const width of [360, 390, 600, 800, 1024]) {
+      await call('Emulation.setDeviceMetricsOverride', {
+        width,
+        height: 1280,
+        deviceScaleFactor: 2,
+        mobile: true,
+      });
+      assert.ok(await ev('document.documentElement.scrollWidth<=innerWidth+2'));
+      assert.ok(
+        await ev("document.querySelector('#historyGroup').getBoundingClientRect().width>150"),
+      );
+      assert.ok(
+        await ev(
+          "document.querySelector('#historyGroup').getBoundingClientRect().top>document.querySelector('#historySearch').getBoundingClientRect().top",
+        ),
+      );
+    }
+    await ev(
+      "document.querySelector('#clearFilters').click();document.querySelector('[data-tab=tasks]').click()",
+    );
+    assert.equal(await ev("document.querySelectorAll('.currentRound').length"), 0);
+    await ev("document.querySelector('[data-detail=repeat]').click()");
+    assert.equal(
+      await ev(
+        "[...document.querySelectorAll('.roundTitle strong')].some(e=>/W\\d\\d/.test(e.textContent))",
+      ),
+      false,
+    );
+    await ev("document.querySelector('#detailDialog').close()");
+    // Remove only this synthetic QA assignment so existing fixture assertions remain stable.
+    memory.tasks.delete(linked.id);
+    await ev('refresh()');
+    checked.push(
+      '4.0任务发布、关键词点选、学科不覆盖、关联与未关联筛选、组合交集、五宽度布局及隐藏轮次',
+    );
     const waitDialogClosed = async () => until("!document.querySelector('#myEditDialog').open");
     await ev(
       "document.querySelector('[data-tab=mine]').click();document.querySelector('[data-profile-open=nickname]').dispatchEvent(new MouseEvent('dblclick',{bubbles:true}));document.querySelector('#myNickname').value='教师测试昵称';document.querySelector('#myEditForm').requestSubmit()",

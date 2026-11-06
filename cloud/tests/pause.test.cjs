@@ -65,12 +65,12 @@ test('老师暂停本日、本周、本月，只影响该轮，下一轮自动�
     assert.ok((await api.snapshot()).features.roundPause);
   }
 });
-test('恢复本轮重新待办；已完成、停用、单次任务不可暂停', async () => {
+test('恢复本轮重新待办；已完成、停用、单次作业不可暂停', async () => {
   const m = createMemory(),
     api = createService(m.store, m.objects, () => at('2026-10-07T10:00'));
   const base = {
     id: 't',
-    name: '任务',
+    name: '作业',
     semester: '七年级上学期',
     subject: '数学',
     kind: 'recurring',
@@ -103,6 +103,6 @@ test('恢复本轮重新待办；已完成、停用、单次任务不可暂停',
   );
   await assert.rejects(
     api.pauseRound({ taskId: 'once', round: '单次', paused: true, expected: 1 }, 'teacher'),
-    /周期任务/,
+    /周期作业/,
   );
 });

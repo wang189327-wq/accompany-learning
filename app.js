@@ -10,10 +10,12 @@ const APP_TITLE = '伴学记录 · 本机测试版';
 /* @runtime-end testmode */
 let searchName = '',
   searchSubject = '',
+  searchAssignmentGroup = '',
   searchSemesters = [];
 let cloudFeatures = { semesters: true, studentTasks: true, roundPause: true, roundNotes: true };
 let db,
   tasks = [],
+  assignmentGroups = [],
   records = [],
   role = null,
   tab = 'tasks',
@@ -221,6 +223,7 @@ async function refresh() {
   ]);
   if (sequence !== refreshSequence) return;
   [tasks, records] = data;
+  assignmentGroups = data[3].find((value) => value.id === 'assignment-groups')?.groups || [];
   await autoLocal();
   StudyUI.set(data[2]);
   await checkReminders();
@@ -300,6 +303,41 @@ async function checkReminders() {
   });
 }
 /* @runtime-end storage */
+function checkGroupCapability() {
+  if (typeof Cloud !== 'undefined' && !cloudFeatures.assignmentGroups)
+    throw Error('请先部署4.0云端接口，再发布任务或保存作业关联');
+}
+async function publishAssignmentGroup(group) {
+  checkGroupCapability();
+  if (!['teacher', 'student'].includes(role)) throw Error('请选择学生或老师身份');
+  if (typeof Cloud !== 'undefined')
+    return Cloud.request('/api/assignment-groups', { method: 'POST', role, body: { group } });
+  const value = AssignmentGroups.validate(group, M.SUBJECTS, M.SEMESTERS);
+  return new Promise((resolve, reject) => {
+    let problem;
+    const tx = db.transaction('preferences', 'readwrite'),
+      store = tx.objectStore('preferences');
+    tx.oncomplete = () => {
+      changed();
+      resolve();
+    };
+    tx.onabort = () => reject(problem || tx.error || Error('任务发布失败'));
+    const request = store.get('assignment-groups');
+    request.onsuccess = () => {
+      const old = request.result;
+      if (old?.groups.some((item) => item.id === value.id)) {
+        problem = Error('任务编号已存在');
+        tx.abort();
+        return;
+      }
+      store.put({
+        id: 'assignment-groups',
+        groups: [...(old?.groups || []), { ...value, createdBy: role, created: now() }],
+        revision: (old?.revision || 0) + 1,
+      });
+    };
+  });
+}
 
 /* @runtime-begin tasks */
 function writeTask(task, expected) {
@@ -317,7 +355,7 @@ function writeTask(task, expected) {
     req.onsuccess = () => {
       const current = req.result;
       if (!role || (current && !M.canManage(current, role))) {
-        problem = Error('只能修改或删除自己发布的任务');
+        problem = Error('只能修改或删除自己发布的作业');
         tx.abort();
         return;
       }
@@ -340,6 +378,11 @@ function writeTask(task, expected) {
         return;
       }
       try {
+        task.assignmentGroupId = AssignmentGroups.association(
+          task.assignmentGroupId,
+          current?.assignmentGroupId,
+          assignmentGroups,
+        );
         task.note = String(task.note || '');
         task.reminder = MyModel.reminder(task.reminder);
         if (task.roundNote)
@@ -374,7 +417,7 @@ function writeTask(task, expected) {
       task.createdBy = current?.createdBy || (current ? 'teacher' : role);
       M.validateTask(task, { requireSemester: true });
       if (expected != null && (!current || current.revision !== expected)) {
-        problem = Error('任务已在另一个窗口更新，请刷新后重试');
+        problem = Error('作业已在另一个窗口更新，请刷新后重试');
         tx.abort();
         return;
       }
@@ -388,7 +431,7 @@ function writeTask(task, expected) {
             current.rule !== task.rule ||
             current.format !== task.format)
         ) {
-          problem = Error('已有成果的任务不能更改类型、周期或提交形式，请新建任务');
+          problem = Error('已有成果的作业不能更改类型、周期或提交形式，请新建作业');
           tx.abort();
           return;
         }
@@ -400,7 +443,7 @@ function writeTask(task, expected) {
             targetRole: 'student',
             kind: current ? 'taskUpdated' : 'taskPublished',
             taskId: task.id,
-            title: current ? '老师修改了任务' : '老师发布了任务',
+            title: current ? '老师修改了作业' : '老师发布了作业',
             body: task.name + ' · ' + (task.semester || '七年级上学期'),
             created: now(),
             read: false,
@@ -432,7 +475,7 @@ function writeRecord(record, taskRevision) {
         M.paused(t, record.round) ||
         t.revision !== taskRevision
       ) {
-        problem = Error('任务已变更，请刷新后重新提交');
+        problem = Error('作业已变更，请刷新后重新提交');
         tx.abort();
         return;
       }
@@ -504,7 +547,7 @@ function showGrade(id) {
   if (!r) return;
   grading = { id, revision: r.gradeRevision || 0 };
   $('gradeForm').reset();
-  $('gradeTitle').textContent = r.taskName + ' · ' + r.round;
+  $('gradeTitle').textContent = r.taskName + ' · ' + M.display(r.completed);
   $('teacherScore').value = r.teacherScore == null ? '' : String(r.teacherScore);
   colorSelect('teacherScore');
   $('gradeError').textContent = '';
@@ -596,7 +639,7 @@ async function saveWeekDays(task, days) {
       });
     };
     tx.oncomplete = resolve;
-    tx.onabort = () => reject(Error('任务已变更，请重新打开'));
+    tx.onabort = () => reject(Error('作业已变更，请重新打开'));
   });
 }
 const reviewingIds = new Set(),
@@ -684,7 +727,7 @@ function submittedHTML(r) {
   let html =
     '<article class="submissionRecord" data-submission="' +
     escapeHTML(r.id) +
-    '"><p class="muted">提交时任务名称：' +
+    '"><p class="muted">提交时作业名称：' +
     escapeHTML(r.taskName) +
     '<br>学科：' +
     escapeHTML(r.subject || '未设置') +
@@ -802,8 +845,8 @@ function badge(s) {
 
 function kindText(t) {
   return t.kind === 'once'
-    ? '单次任务'
-    : { day: '每天循环', week: '每周循环', month: '每月循环' }[t.rule] || '周期任务';
+    ? '单次作业'
+    : { day: '每天循环', week: '每周循环', month: '每月循环' }[t.rule] || '周期作业';
 }
 function canViewTask(task) {
   return !!task && !M.historyHidden(task) && (role === 'teacher' || !task.deletedAt);
@@ -845,6 +888,22 @@ function moveCalendar(delta) {
   } else d += delta * (taskView === 'week' ? 7 : 1) * M.DAY;
   calendarDate = dayLabel(d);
 }
+const groupUI = AssignmentGroupsUI.create(() => ({
+  groups: assignmentGroups,
+  M,
+  escapeHTML,
+  uid,
+  toast,
+  refresh,
+  checkCapability: checkGroupCapability,
+  publish: publishAssignmentGroup,
+  onSelect(id, value) {
+    if (id === 'historyGroup') {
+      searchAssignmentGroup = value;
+      $('historyResults').innerHTML = historyResults();
+    }
+  },
+}));
 const taskViews = TaskViews.create(() => ({
   taskView,
   TaskOrdering,
@@ -869,6 +928,9 @@ const taskViews = TaskViews.create(() => ({
   searchName,
   searchSubject,
   searchSemesters,
+  searchAssignmentGroup,
+  assignmentGroups,
+  AssignmentGroups,
 }));
 function calendarPage(list, agenda) {
   return taskViews.calendarPage(list, agenda);
@@ -912,7 +974,7 @@ function navIcon(key) {
 }
 function alignPublishButton() {
   const row = $('newTask')?.closest('.taskStats'),
-    button = $('newTask'),
+    button = row?.querySelector('.publishActions'),
     metrics = row?.querySelector('.taskMetrics');
   if (!row || !button?.getBoundingClientRect || !metrics?.getBoundingClientRect) return;
   const b = button.getBoundingClientRect(),
@@ -998,20 +1060,20 @@ function render() {
         : tab === 'tasks'
           ? calendarPage(
               sorted,
-              section('未完成任务', pending, '暂无未完成任务') +
-                section('已完成任务', done, '暂无已完成任务') +
-                (role === 'teacher' ? section('已停用任务', disabled, '暂无已停用任务') : '') +
+              section('未完成作业', pending, '暂无未完成作业') +
+                section('已完成作业', done, '暂无已完成作业') +
+                (role === 'teacher' ? section('已停用作业', disabled, '暂无已停用作业') : '') +
                 (role === 'teacher' && pausedTasks.length
                   ? section('本轮暂停', pausedTasks, '')
                   : ''),
             )
           : [
               `<div class="pageHeading">`,
-              `<h2>历史任务</h2>`,
+              `<h2>作业档案</h2>`,
               `</div>`,
               `<div class="historyFilters">`,
-              `<label>任务名称<input id="historySearch" type="search" placeholder="输入任务" value="${escapeHTML(searchName)}">`,
-              `</label>`,
+              `<div class="historyNames"><label>作业名称<input id="historySearch" type="search" placeholder="输入作业名称关键词" value="${escapeHTML(searchName)}"></label>`,
+              `${groupUI.html('historyGroup', searchAssignmentGroup, true)}</div>`,
               `<label>学科<select id="historySubject">`,
               `<option value="">全部学科</option>`,
               `${M.SUBJECTS.map((s) => `<option value="${s}" ${s === searchSubject ? 'selected' : ''}>${s}</option>`).join('')}</select>`,
@@ -1046,7 +1108,7 @@ function render() {
           `<div class="taskMetrics">`,
           `<span class="taskCount">`,
           `<strong>`,
-          `${active.length}</strong> 个历史任务</span>`,
+          `${active.length}</strong> 个作业</span>`,
           `<div class="secondaryStats">`,
           `<span>`,
           `<strong>`,
@@ -1056,7 +1118,7 @@ function render() {
           `${historyCount}</strong> 份历史成果</span>`,
           `</div>`,
           `</div>`,
-          `<button id="newTask" class="primary">+发布任务</button>`,
+          `<div class="publishActions"><button id="newAssignmentGroup" class="primary">+发布任务</button><button id="newTask" class="primary">+发布作业</button></div>`,
           `</div>`,
         ].join('')
       : ''
@@ -1064,8 +1126,8 @@ function render() {
   $('app').innerHTML = [
     `${tab === 'tasks' ? `<div class="taskTopRow">${taskSummary}${tools ? '<div class="toolbar testTools">' + tools + '</div>' : ''}${panel}</div>` : ''}${content}<nav class="bottomNav" aria-label="页面导航">`,
     `${[
-      ['tasks', '任务清单'],
-      ['history', '历史任务'],
+      ['tasks', '作业清单'],
+      ['history', '作业档案'],
       ['materials', '学习资料'],
       ['exams', '成绩分析'],
       ['mine', '我的'],
@@ -1211,7 +1273,7 @@ function renderDetail() {
     [
       `<p class="muted">`,
       `${kindText(t)} · ${formatText(t.format)} · 发布于 ${M.display(t.created)}${t.deletedAt ? ' · 已删除' : !t.enabled ? ' · 已停用' : ''}</p>`,
-      `${t.note ? '<p class="muted taskNote">任务备注：' + escapeHTML(t.note) + '</p>' : ''}${StudyUI.taskTabs(t)}${
+      `${t.note ? '<p class="muted taskNote">作业备注：' + escapeHTML(t.note) + '</p>' : ''}${StudyUI.taskTabs(t)}${
         visibleRounds
           .slice(0, shown)
           .map((p) => {
@@ -1258,13 +1320,13 @@ function renderDetail() {
               `<section class="round" data-round="${escapeHTML(p.key)}">`,
               `<div class="roundTitle">`,
               `<strong>`,
-              `${escapeHTML(p.key)}</strong>`,
+              `${escapeHTML(M.scheduleLabel(t, p))}</strong>`,
               `${badge(s)}</div>`,
-              `${t.kind === 'recurring' ? `<p class="muted">${M.display(p.start)} 至 ${M.display(p.end)}（不含结束时刻）</p>` : ''}${t.kind === 'recurring' && M.roundNote(t, p.key) ? '<p class="muted periodNote">' + periodNoteName(t) + '：' + escapeHTML(M.roundNote(t, p.key)) + '</p>' : ''}${body}${role === 'teacher' && t.kind === 'recurring' && canEditRoundNotes() ? '<div class="actions roundNoteActions"><button data-period-note="' + escapeHTML(p.key) + '">编辑' + periodNoteName(t) + '</button></div>' : ''}</section>`,
+              `${t.kind === 'recurring' && M.roundNote(t, p.key) ? '<p class="muted periodNote">' + periodNoteName(t) + '：' + escapeHTML(M.roundNote(t, p.key)) + '</p>' : ''}${body}${role === 'teacher' && t.kind === 'recurring' && canEditRoundNotes() ? '<div class="actions roundNoteActions"><button data-period-note="' + escapeHTML(p.key) + '">编辑' + periodNoteName(t) + '</button></div>' : ''}</section>`,
             ].join('');
           })
-          .join('') || '<p class="empty">暂无符合所选状态的轮次。</p>'
-      }${visibleRounds.length > shown ? '<button id="moreRounds">显示更多轮次</button>' : ''}`,
+          .join('') || '<p class="empty">暂无符合所选状态的记录。</p>'
+      }${visibleRounds.length > shown ? '<button id="moreRounds">显示更多记录</button>' : ''}`,
     ].join(''),
   );
 }
@@ -1274,10 +1336,15 @@ function showForm(id) {
   editingRevision = t?.revision ?? null;
   if (t && !M.canManage(t, role)) return;
   if (typeof Cloud !== 'undefined' && !cloudFeatures.semesters) {
-    toast('请先更新 v1.5.1 云端接口，再发布或修改任务');
+    toast('请先更新 v1.5.1 云端接口，再发布或修改作业');
     return;
   }
   $('taskForm').reset();
+  groupUI.reset('formAssignmentGroup', t?.assignmentGroupId || '');
+  $('assignmentGroupField').innerHTML = groupUI.html(
+    'formAssignmentGroup',
+    t?.assignmentGroupId || '',
+  );
   $('requiresTeaching').value = t ? String(t.requiresTeaching === true) : '';
   $('teacherTaskFields').classList.toggle('hidden', role !== 'teacher');
   $('taskNote').value = t?.note || '';
@@ -1287,7 +1354,7 @@ function showForm(id) {
   $('reminderUnit').value = t?.reminder?.unit || 'hours';
   updateReminderForm();
   $('formError').textContent = '';
-  $('formTitle').textContent = t ? '修改任务' : '发布任务';
+  $('formTitle').textContent = t ? '修改作业' : '发布作业';
   if (t) {
     $('name').value = t.name;
     $('subject').value = t.subject || '';
@@ -1307,8 +1374,8 @@ function showForm(id) {
   const locked = role !== 'teacher' && !!t && records.some((r) => r.taskId === t.id);
   ['kind', 'rule', 'format'].forEach((x) => ($(x).disabled = locked));
   $('editHint').textContent = locked
-    ? '已有成果，任务类型、周期和提交形式已锁定。名称修改不影响旧成果。'
-    : '周期任务发布后立即进入本轮，默认无限循环。';
+    ? '已有成果，作业类型、周期和提交形式已锁定。名称修改不影响旧成果。'
+    : '周期作业发布后立即进入本轮，默认无限循环。';
   updateForm();
   $('formDialog').showModal();
 }
@@ -1320,7 +1387,7 @@ function updateReminderForm() {
 }
 $('reminderEnabled').addEventListener('change', updateReminderForm);
 function updateForm() {
-  $('periodNoteCaption').textContent = periodNoteName({ rule: $('rule').value }) + '（仅当前轮次）';
+  $('periodNoteCaption').textContent = periodNoteName({ rule: $('rule').value });
   const once = $('kind').value === 'once';
   $('onceRange').classList.toggle('hidden', !once);
   $('recurringRange').classList.toggle('hidden', once);
@@ -1335,7 +1402,11 @@ function updateForm() {
   $('periodNote').disabled = !canEditRoundNotes();
   $('periodNoteHint').textContent = canEditRoundNotes()
     ? formRoundKey
-      ? '当前轮次：' + formRoundKey
+      ? '适用完成时间：' +
+        M.scheduleLabel(
+          { kind: 'recurring', rule: $('rule').value },
+          M.period({ kind: 'recurring', rule: $('rule').value }, now()),
+        )
       : ''
     : '周期备注尚未启用，请更新云端接口';
 }
@@ -1347,7 +1418,7 @@ function showSubmission(key) {
   colorSelect('selfScore');
   $('submitError').textContent = '';
   $('fileInfo').textContent = '';
-  $('submitTitle').textContent = t.name + ' · ' + key;
+  $('submitTitle').textContent = t.name;
   $('submitInfo').textContent =
     '提交形式：' + formatText(t.format) + '；提交时间以确认保存时为准。';
   $('textLabel').classList.toggle('hidden', t.format !== 'text');
@@ -1370,7 +1441,15 @@ async function exportBackup() {
     out.push(copy);
   }
   const blob = new Blob(
-    [JSON.stringify({ version: 1, exported: new Date().toISOString(), tasks, records: out })],
+    [
+      JSON.stringify({
+        version: 2,
+        exported: new Date().toISOString(),
+        tasks,
+        records: out,
+        assignmentGroups,
+      }),
+    ],
     { type: 'application/json' },
   );
   download(blob, '伴学记录备份-' + M.input(Date.now()).replace(/[:T]/g, '-') + '.json');
@@ -1386,10 +1465,19 @@ function download(blob, name) {
 }
 async function restoreBackup(file) {
   const data = JSON.parse(await file.text());
-  if (data.version !== 1 || !Array.isArray(data.tasks) || !Array.isArray(data.records))
+  if (![1, 2].includes(data.version) || !Array.isArray(data.tasks) || !Array.isArray(data.records))
     throw Error('不是有效的本程序备份');
   const ids = new Set();
+  const restoredGroups = data.assignmentGroups || [];
+  if (!Array.isArray(restoredGroups)) throw Error('备份作业数据无效');
+  const groupIds = new Set();
+  for (const group of restoredGroups) {
+    AssignmentGroups.validate(group, M.SUBJECTS, M.SEMESTERS);
+    if (groupIds.has(group.id)) throw Error('备份作业编号重复');
+    groupIds.add(group.id);
+  }
   for (const t of data.tasks) {
+    t.assignmentGroupId = AssignmentGroups.association(t.assignmentGroupId, null, restoredGroups);
     M.validateTask(t, { allowLegacySubject: true });
     if (
       typeof t.id !== 'string' ||
@@ -1397,7 +1485,7 @@ async function restoreBackup(file) {
       !Number.isFinite(t.created) ||
       typeof t.enabled !== 'boolean'
     )
-      throw Error('备份任务数据无效');
+      throw Error('备份作业数据无效');
     ids.add(t.id);
     t.revision = Number.isFinite(t.revision) ? t.revision : 1;
   }
@@ -1428,18 +1516,23 @@ async function restoreBackup(file) {
   }
   if (
     !confirm(
-      `恢复备份会替换当前浏览器中的全部数据。备份含 ${data.tasks.length} 个任务、${data.records.length} 份成果。是否继续？建议先导出当前数据。`,
+      `恢复备份会替换当前浏览器中的全部数据。备份含 ${data.tasks.length} 个作业、${data.records.length} 份成果。是否继续？建议先导出当前数据。`,
     )
   )
     return false;
   await new Promise((resolve, reject) => {
-    const tx = db.transaction(['tasks', 'records'], 'readwrite');
+    const tx = db.transaction(['tasks', 'records', 'preferences'], 'readwrite');
     tx.oncomplete = resolve;
     tx.onabort = () => reject(tx.error || Error('恢复失败，原数据未改变'));
     tx.onerror = () => {};
     tx.objectStore('tasks').clear();
     tx.objectStore('records').clear();
     data.tasks.forEach((t) => tx.objectStore('tasks').put(t));
+    tx.objectStore('preferences').put({
+      id: 'assignment-groups',
+      groups: restoredGroups,
+      revision: 1,
+    });
     data.records.forEach((r) => tx.objectStore('records').add(r));
   });
   return true;
@@ -1568,6 +1661,10 @@ document.addEventListener('click', async (e) => {
       toast(paused ? '本轮已暂停，下一轮自动恢复' : '本轮已恢复');
       return;
     }
+    if (el.id === 'newAssignmentGroup') {
+      groupUI.publish();
+      return;
+    }
     if (el.id === 'newTask') {
       showForm();
       return;
@@ -1577,6 +1674,8 @@ document.addEventListener('click', async (e) => {
     if (el.id === 'clearFilters') {
       searchName = '';
       searchSubject = '';
+      searchAssignmentGroup = '';
+      groupUI.reset('historyGroup');
       searchSemesters = [];
       render();
       return;
@@ -1627,7 +1726,7 @@ document.addEventListener('click', async (e) => {
       if (!t || !M.canManage(t, role)) return;
       if (
         el.dataset.delete &&
-        !confirm('删除任务？已提交的成果会永久保留，可在“发布历史与成果”查看。')
+        !confirm('删除作业？已提交的成果会永久保留，可在“发布历史与成果”查看。')
       )
         return;
       const next = { ...t };
@@ -1635,7 +1734,7 @@ document.addEventListener('click', async (e) => {
       else next.enabled = !next.enabled;
       await writeTask(next, t.revision);
       await refresh();
-      toast(el.dataset.delete ? '任务已删除，成果已保留' : '任务状态已更新');
+      toast(el.dataset.delete ? '作业已删除，成果已保留' : '作业状态已更新');
       return;
     }
     if (el.dataset.periodNote) {
@@ -1702,11 +1801,12 @@ $('taskForm').addEventListener('submit', async (e) => {
   try {
     const old = tasks.find((x) => x.id === editing);
     if (editing && (!old || old.revision !== editingRevision))
-      throw Error('任务已更新，请关闭后重新打开编辑');
+      throw Error('作业已更新，请关闭后重新打开编辑');
     const task = {
       ...(old || {}),
       id: old?.id || uid(),
       name: $('name').value.trim(),
+      assignmentGroupId: groupUI.value('formAssignmentGroup'),
       subject: $('subject').value,
       semester: $('taskSemester').value,
       requiresTeaching: $('requiresTeaching').value === 'true',
@@ -1765,7 +1865,7 @@ $('taskForm').addEventListener('submit', async (e) => {
     await writeTask(task, old?.revision);
     $('formDialog').close();
     await refresh();
-    toast(old ? '修改已保存' : '任务发布成功');
+    toast(old ? '修改已保存' : '作业发布成功');
   } catch (err) {
     $('formError').textContent = err.message;
   } finally {
@@ -1811,7 +1911,7 @@ $('submitForm').addEventListener('submit', async (e) => {
         ? '补交成功，已标记紫色'
         : r.late
           ? '提交成功，已标记逾期完成'
-          : '提交成功，任务已变绿',
+          : '提交成功，作业已变绿',
     );
   } catch (err) {
     $('submitError').textContent =
@@ -1940,7 +2040,7 @@ async function saveRoundNote(draft, text) {
       body: { ...draft, text },
     });
   const current = tasks.find((t) => t.id === draft.taskId);
-  if (!current) throw Error('任务不存在');
+  if (!current) throw Error('作业不存在');
   return writeTask({ ...current, roundNote: { round: draft.round, text } }, draft.expected);
 }
 $('roundNoteForm').addEventListener('submit', async (e) => {

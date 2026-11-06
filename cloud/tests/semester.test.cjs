@@ -18,7 +18,7 @@ const task = (id, extra = {}) => ({
   enabled: true,
   ...extra,
 });
-test('学生可以发布并管理自己的任务，不能修改、删除老师任务；来源不能伪造或转移', async () => {
+test('学生可以发布并管理自己的作业，不能修改、删除老师作业；来源不能伪造或转移', async () => {
   const m = createMemory(),
     api = createService(m.store, m.objects, () => at('2026-07-01T10:00'));
   const teacher = await api.saveTask({ task: task('teacher') }, 'teacher');
@@ -83,7 +83,7 @@ test('学生可以发布并管理自己的任务，不能修改、删除老师�
     'purple',
   );
 });
-test('旧任务和资料学期补齐前先备份，迁移幂等且不删除以后停用的任务', async () => {
+test('旧作业和资料学期补齐前先备份，迁移幂等且不删除以后停用的作业', async () => {
   const m = createMemory(),
     api = createService(m.store, m.objects, () => at('2026-07-10T10:00'));
   const legacy = {
@@ -127,7 +127,7 @@ test('旧任务和资料学期补齐前先备份，迁移幂等且不删除以�
   assert.equal([...m.files.keys()].filter((k) => k.startsWith('backups/upgrade')).length, 1);
   assert.equal(m.tasks.get('old').revision, 2);
 });
-test('迁移备份失败时不写入任务或资料；并发冲突不会覆盖用户修改', async () => {
+test('迁移备份失败时不写入作业或资料；并发冲突不会覆盖用户修改', async () => {
   const m = createMemory(),
     api = createService(m.store, m.objects);
   m.tasks.set('old', {
@@ -209,7 +209,7 @@ test('资料和文件夹学期必选、多选去重；学期筛选取并集，�
   assert.equal(S.exams([paper], { semesters: ['七年级下学期'] }).length, 0);
   assert.equal(S.exams([{ ...paper, targetScore: null }])[0].plottedTarget, null);
 });
-test('月历分别显示7月1日和10日的周任务打卡，补交落在实际提交日，已删除学生不可见', () => {
+test('月历分别显示7月1日和10日的周作业打卡，补交落在实际提交日，已删除学生不可见', () => {
   const t = { ...task('weekly'), created: at('2026-07-01T10:00') },
     r1 = { taskId: t.id, round: '2026-W27', completed: at('2026-07-01T20:00'), late: false },
     r2 = { taskId: t.id, round: '2026-W28', completed: at('2026-07-10T20:00'), late: false },

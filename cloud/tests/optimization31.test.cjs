@@ -64,7 +64,7 @@ test('有索引和无索引的历史/日历业务结果完全一致，含删除�
   for (let i = 0; i < 250; i++) {
     const t = {
       id: 't' + i,
-      name: '任务' + i,
+      name: '作业' + i,
       kind: i % 7 === 0 ? 'once' : 'recurring',
       rule: ['day', 'week', 'month'][i % 3],
       format: i % 5 === 0 ? 'auto' : 'text',

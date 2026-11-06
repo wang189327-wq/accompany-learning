@@ -4,6 +4,8 @@
 
 ## 任务
 
+4.0界面称原实体为“作业”。本节内部`task`字段与ID继续兼容，不做字符串迁移。新任务为独立集合，数据项`{id,name,subject,semester,createdBy,created}`；记录表命名空间`__c9_assignment_groups__ / catalog`含`groups`数组并以`gradeRevision`做CAS。作业新增可空`assignmentGroupId`，新建缺省未关联；修改缺省保留旧值，显式`null`才解除。新任务双方可见可选，不能加入原`listTasks`打卡遍历。
+
 ```js
 {
   id: 'immutable-task-id',       // 技术关联键，改名称不改ID

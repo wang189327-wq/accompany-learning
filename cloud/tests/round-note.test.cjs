@@ -25,7 +25,7 @@ async function task(s) {
         rule: 'week',
         format: 'text',
         enabled: true,
-        note: '长期任务备注',
+        note: '长期作业备注',
         roundNote: { round: '2026-W42', text: '本周重点：方程' },
       },
     },
@@ -61,7 +61,7 @@ test('周期备注下一轮留空，旧轮永久保留；老师可修改已完�
     'teacher',
   );
   assert.equal(t.roundNotes['2026-W42'], '完成后补充点评');
-  assert.equal(t.note, '长期任务备注');
+  assert.equal(t.note, '长期作业备注');
   snap = await s.api.snapshot();
   assert.deepEqual(snap.records[0], original);
   await s.api.saveRoundNote(

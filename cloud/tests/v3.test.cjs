@@ -90,14 +90,14 @@ test('停用默认打卡从当天日历移除，保留此前完成，修改后�
   assert.equal(M.calendarRecords(s.tasks, s.records, M.parse('2026-11-01'), 'student').length, 1);
   assert.equal(s.records.length, 2);
   clock += M.DAY;
-  t = await api.saveTask({ task: { ...t, name: '修改停用任务' }, expected: t.revision }, 'teacher');
+  t = await api.saveTask({ task: { ...t, name: '修改停用作业' }, expected: t.revision }, 'teacher');
   assert.equal(t.disabledAt, base);
   t = await api.saveTask({ task: { ...t, enabled: true }, expected: t.revision }, 'teacher');
   s = await api.snapshot();
   assert.equal(M.calendarRecords(s.tasks, s.records, M.parse('2026-11-02'), 'teacher').length, 1);
   assert.equal(t.disabledAt, null);
 });
-test('移除固定测试历史并备份，名称相似正式任务不受影响，重复快照幂等', async () => {
+test('移除固定测试历史并备份，名称相似正式作业不受影响，重复快照幂等', async () => {
   const mem = createMemory(),
     api = createService(mem.store, mem.objects, () => base);
   const hidden = {

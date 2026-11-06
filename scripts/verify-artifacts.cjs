@@ -22,7 +22,7 @@ async function scan(zip, label) {
   return count;
 }
 (async () => {
-  const apkBytes = await fs.readFile(path.join(root, 'android/release/伴学记录-v3.1.apk')),
+  const apkBytes = await fs.readFile(path.join(root, 'android/release/伴学记录-v4.0.apk')),
     apk = await loadAsync(apkBytes),
     checks = {};
   checks.apkTextAssetsScanned = await scan(apk, 'APK');
@@ -58,6 +58,8 @@ async function scan(zip, label) {
       for (const file of [
         'core.cjs',
         'task-service.cjs',
+        'assignment-groups.cjs',
+        'assignment-groups.js',
         'extras.cjs',
         'server.cjs',
         'aliyun.cjs',
@@ -77,9 +79,9 @@ async function scan(zip, label) {
   const result = {
     passed: true,
     name: '伴学记录',
-    version: '3.1',
-    versionCode: 54,
-    cloudBuild: 54,
+    version: '4.0',
+    versionCode: 55,
+    cloudBuild: 55,
     apk: { bytes: apkBytes.length, sha256: hash(apkBytes) },
     checks,
     packages,
