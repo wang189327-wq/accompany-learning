@@ -80,7 +80,7 @@ async function scan(zip, label) {
     passed: true,
     name: '伴学记录',
     version: '4.0',
-    versionCode: 55,
+    versionCode: 56,
     cloudBuild: 55,
     apk: { bytes: apkBytes.length, sha256: hash(apkBytes) },
     checks,

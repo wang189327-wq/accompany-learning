@@ -2572,6 +2572,12 @@ main.myPage {
   overflow-wrap: anywhere;
   margin-top: 4px;
 }
+#historyGroup-selected {
+  display: none;
+}
+.historyNames .groupCandidates {
+  top: 100%;
+}
 .groupCandidates {
   position: absolute;
   z-index: 20;
