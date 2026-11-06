@@ -2575,6 +2575,11 @@ main.myPage {
 #historyGroup-selected {
   display: none;
 }
+.semesterTaskBadge {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .historyNames .groupCandidates {
   top: 100%;
 }

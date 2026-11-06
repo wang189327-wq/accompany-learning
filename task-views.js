@@ -199,6 +199,11 @@ const TaskViews = (() => {
     }
 
     function taskCard(t, at = now()) {
+      const compact = getContext().tab === 'tasks' && getContext().taskView === 'agenda';
+      const groupName = t.assignmentGroupId
+        ? getContext().assignmentGroups?.find((group) => group.id === t.assignmentGroupId)?.name ||
+          '未找到关联任务'
+        : '';
       const {
         M,
         recordFor,
@@ -226,13 +231,12 @@ const TaskViews = (() => {
         w = M.windowFor(t, p);
       return [
         `<article${TaskOrdering.card(t.id)} class="card taskCard ${s.color} ${t.createdBy === 'student' ? 'studentTask' : ''} ${t.requiresTeaching ? 'courseTask' : ''} ${!t.enabled ? 'disabledTask' : ''}">`,
-        `${TaskOrdering.actions(t.id)}${badge(s)}<span class="badge">`,
-        `${escapeHTML(t.semester === undefined ? '七年级上学期' : t.semester || '学期未设置')}</span>`,
+        `${TaskOrdering.actions(t.id)}${badge(s)}<span class="badge${compact ? ' semesterTaskBadge' : ''}">`,
+        `${escapeHTML(t.semester === undefined ? '七年级上学期' : t.semester || '学期未设置')}${compact && groupName ? ' | ' + escapeHTML(groupName) : ''}</span>`,
         `${t.requiresTeaching ? '<span class="badge blue">需要授课</span>' : ''}${t.createdBy === 'student' ? '<span class="badge blue">学生发布</span>' : ''}${t.deletedAt ? '<span class="badge red">已删除</span>' : ''}<h3>`,
         `${escapeHTML(t.name)}</h3>`,
-        `${t.assignmentGroupId ? '<p class="muted">任务：' + escapeHTML(getContext().assignmentGroups?.find((group) => group.id === t.assignmentGroupId)?.name || '未找到关联任务') + '</p>' : ''}`,
-        `<p class="muted">`,
-        `${escapeHTML(t.subject || '学科未设置')} · ${kindText(t)} · ${formatText(t.format)}</p>`,
+        `${!compact && groupName ? '<p class="muted">任务：' + escapeHTML(groupName) + '</p>' : ''}`,
+        `${!compact ? '<p class="muted">' + escapeHTML(t.subject || '学科未设置') + ' · ' + kindText(t) + ' · ' + formatText(t.format) + '</p>' : ''}`,
         `<p class="muted">完成时间：${M.scheduleLabel(t, p)}${t.rule === 'week' && t.weekDays?.length ? ' · ' + t.weekDays.map((d) => '周' + ['一', '二', '三', '四', '五', '六', '日'][d]).join('、') : ''}</p>`,
         `${t.note ? '<p class="muted taskNote">作业备注：' + escapeHTML(t.note) + '</p>' : ''}${t.kind === 'recurring' && M.roundNote(t, p.key) ? '<p class="muted periodNote">' + periodNoteName(t) + '：' + escapeHTML(M.roundNote(t, p.key)) + '</p>' : ''}${scoreHTML(recordFor(t, p))}<div class="actions">`,
         `${role === 'teacher' && p.key === M.period(t, now()).key && t.kind === 'recurring' && t.enabled && !t.deletedAt && !recordFor(t, p) ? `<button data-pause-round="${escapeHTML(t.id)}">${M.paused(t, p) ? '恢复' : '暂停'}${{ day: '本日', week: '本周', month: '本月' }[t.rule]}</button>` : ''}${t.kind === 'recurring' && t.rule === 'week' && !t.deletedAt ? '<button data-weekdays="' + escapeHTML(t.id) + '">完成星期</button>' : ''}<button data-detail="${escapeHTML(t.id)}">查看详情 / 历史</button>`,

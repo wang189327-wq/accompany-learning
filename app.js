@@ -905,6 +905,7 @@ const groupUI = AssignmentGroupsUI.create(() => ({
   },
 }));
 const taskViews = TaskViews.create(() => ({
+  tab,
   taskView,
   TaskOrdering,
   calendarDate,
@@ -1272,7 +1273,7 @@ function renderDetail() {
     $('detailBody'),
     [
       `<p class="muted">`,
-      `${kindText(t)} · ${formatText(t.format)} · 发布于 ${M.display(t.created)}${t.deletedAt ? ' · 已删除' : !t.enabled ? ' · 已停用' : ''}</p>`,
+      `${escapeHTML(t.subject || '学科未设置')} · ${kindText(t)} · ${formatText(t.format)} · 发布于 ${M.display(t.created)}${t.deletedAt ? ' · 已删除' : !t.enabled ? ' · 已停用' : ''}</p>`,
       `${t.note ? '<p class="muted taskNote">作业备注：' + escapeHTML(t.note) + '</p>' : ''}${StudyUI.taskTabs(t)}${
         visibleRounds
           .slice(0, shown)
