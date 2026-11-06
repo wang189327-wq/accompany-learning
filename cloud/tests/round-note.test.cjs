@@ -1,6 +1,144 @@
-const test=require('node:test'),assert=require('node:assert/strict'),{createMemory}=require('../memory.cjs'),{createService}=require('../core.cjs');const M=global.TaskModel,at=M.parse;
-function setup(){const memory=createMemory();let time=at('2026-10-13T10:00');return {memory,api:createService(memory.store,memory.objects,()=>time),setTime:t=>time=t};}
-async function task(s){return s.api.saveTask({task:{id:'weekly-notes',name:'周作业',subject:'数学',semester:'七年级上学期',kind:'recurring',rule:'week',format:'text',enabled:true,note:'长期任务备注',roundNote:{round:'2026-W42',text:'本周重点：方程'}}},'teacher');}
-test('周期备注下一轮留空，旧轮永久保留；老师可修改已完成记录对应备注，作业不可变',async()=>{const s=setup();let t=await task(s);assert.equal(t.roundNotes['2026-W42'],'本周重点：方程');const bytes=Buffer.from('学生的不可变作业'),u=await s.api.beginUpload({taskId:t.id,kind:'text',size:bytes.length},'student'),part=await s.api.uploadPart(u.uploadId,1,bytes,'student');await s.api.finishUpload(u.uploadId,{parts:[part]},'student');await s.api.submit({taskId:t.id,taskRevision:t.revision,requestId:'request-note',round:'2026-W42',selfScore:9,uploadIds:[u.uploadId]},'student');let snap=await s.api.snapshot();t=snap.tasks[0];const original=snap.records[0];s.setTime(at('2026-10-19T00:00'));assert.equal(M.roundNote(t,M.period(t,at('2026-10-19T00:00')).key),'');t=await s.api.saveRoundNote({taskId:t.id,round:'2026-W42',text:'完成后补充点评',expected:t.revision},'teacher');assert.equal(t.roundNotes['2026-W42'],'完成后补充点评');assert.equal(t.note,'长期任务备注');snap=await s.api.snapshot();assert.deepEqual(snap.records[0],original);await s.api.saveRoundNote({taskId:t.id,round:'2026-W43',text:'新周期备注',expected:t.revision},'teacher');assert.equal((await s.api.snapshot()).tasks[0].roundNotes['2026-W42'],'完成后补充点评');});
-test('学生不能添加/修改周期备注，旧更新不能覆盖新备注，非法轮次拒绝；旧客户端保存不清除备注',async()=>{const s=setup();let t=await task(s);await assert.rejects(s.api.saveRoundNote({taskId:t.id,round:'2026-W42',text:'学生改动',expected:t.revision},'student'),e=>e.status===403);await assert.rejects(s.api.saveRoundNote({taskId:t.id,round:'2026-W99',text:'错误轮次',expected:t.revision},'teacher'),e=>e.status===400);t=await s.api.saveRoundNote({taskId:t.id,round:'2026-W42',text:'老师新备注',expected:t.revision},'teacher');await assert.rejects(s.api.saveRoundNote({taskId:t.id,round:'2026-W42',text:'旧窗口备注',expected:1},'teacher'),e=>e.status===409);const {roundNotes,...oldClient}=t;t=await s.api.saveTask({task:{...oldClient,name:'改名称'},expected:t.revision},'teacher');assert.equal(t.roundNotes['2026-W42'],'老师新备注');});
-test('每日、每月备注按轮次独立保存，未来轮次和单次备注拒绝；清空备注不影响其他轮次',async()=>{for(const rule of ['day','month']){const s=setup();let t=await s.api.saveTask({task:{id:'notes-'+rule,name:'作业',subject:'英语',semester:'七年级上学期',kind:'recurring',rule,format:'text',enabled:true}},'teacher'),p=M.period(t,t.created);t=await s.api.saveRoundNote({taskId:t.id,round:p.key,text:'本轮',expected:t.revision},'teacher');s.setTime(p.end);const next=M.period(t,p.end);t=await s.api.saveRoundNote({taskId:t.id,round:next.key,text:'下一轮',expected:t.revision},'teacher');t=await s.api.saveRoundNote({taskId:t.id,round:p.key,text:'',expected:t.revision},'teacher');assert.equal(t.roundNotes[p.key],'');assert.equal(t.roundNotes[next.key],'下一轮');}});
+const test = require('node:test'),
+  assert = require('node:assert/strict'),
+  { createMemory } = require('../memory.cjs'),
+  { createService } = require('../core.cjs');
+const M = global.TaskModel,
+  at = M.parse;
+function setup() {
+  const memory = createMemory();
+  let time = at('2026-10-13T10:00');
+  return {
+    memory,
+    api: createService(memory.store, memory.objects, () => time),
+    setTime: (t) => (time = t),
+  };
+}
+async function task(s) {
+  return s.api.saveTask(
+    {
+      task: {
+        id: 'weekly-notes',
+        name: '周作业',
+        subject: '数学',
+        semester: '七年级上学期',
+        kind: 'recurring',
+        rule: 'week',
+        format: 'text',
+        enabled: true,
+        note: '长期任务备注',
+        roundNote: { round: '2026-W42', text: '本周重点：方程' },
+      },
+    },
+    'teacher',
+  );
+}
+test('周期备注下一轮留空，旧轮永久保留；老师可修改已完成记录对应备注，作业不可变', async () => {
+  const s = setup();
+  let t = await task(s);
+  assert.equal(t.roundNotes['2026-W42'], '本周重点：方程');
+  const bytes = Buffer.from('学生的不可变作业'),
+    u = await s.api.beginUpload({ taskId: t.id, kind: 'text', size: bytes.length }, 'student'),
+    part = await s.api.uploadPart(u.uploadId, 1, bytes, 'student');
+  await s.api.finishUpload(u.uploadId, { parts: [part] }, 'student');
+  await s.api.submit(
+    {
+      taskId: t.id,
+      taskRevision: t.revision,
+      requestId: 'request-note',
+      round: '2026-W42',
+      selfScore: 9,
+      uploadIds: [u.uploadId],
+    },
+    'student',
+  );
+  let snap = await s.api.snapshot();
+  t = snap.tasks[0];
+  const original = snap.records[0];
+  s.setTime(at('2026-10-19T00:00'));
+  assert.equal(M.roundNote(t, M.period(t, at('2026-10-19T00:00')).key), '');
+  t = await s.api.saveRoundNote(
+    { taskId: t.id, round: '2026-W42', text: '完成后补充点评', expected: t.revision },
+    'teacher',
+  );
+  assert.equal(t.roundNotes['2026-W42'], '完成后补充点评');
+  assert.equal(t.note, '长期任务备注');
+  snap = await s.api.snapshot();
+  assert.deepEqual(snap.records[0], original);
+  await s.api.saveRoundNote(
+    { taskId: t.id, round: '2026-W43', text: '新周期备注', expected: t.revision },
+    'teacher',
+  );
+  assert.equal((await s.api.snapshot()).tasks[0].roundNotes['2026-W42'], '完成后补充点评');
+});
+test('学生不能添加/修改周期备注，旧更新不能覆盖新备注，非法轮次拒绝；旧客户端保存不清除备注', async () => {
+  const s = setup();
+  let t = await task(s);
+  await assert.rejects(
+    s.api.saveRoundNote(
+      { taskId: t.id, round: '2026-W42', text: '学生改动', expected: t.revision },
+      'student',
+    ),
+    (e) => e.status === 403,
+  );
+  await assert.rejects(
+    s.api.saveRoundNote(
+      { taskId: t.id, round: '2026-W99', text: '错误轮次', expected: t.revision },
+      'teacher',
+    ),
+    (e) => e.status === 400,
+  );
+  t = await s.api.saveRoundNote(
+    { taskId: t.id, round: '2026-W42', text: '老师新备注', expected: t.revision },
+    'teacher',
+  );
+  await assert.rejects(
+    s.api.saveRoundNote(
+      { taskId: t.id, round: '2026-W42', text: '旧窗口备注', expected: 1 },
+      'teacher',
+    ),
+    (e) => e.status === 409,
+  );
+  const { roundNotes, ...oldClient } = t;
+  t = await s.api.saveTask(
+    { task: { ...oldClient, name: '改名称' }, expected: t.revision },
+    'teacher',
+  );
+  assert.equal(t.roundNotes['2026-W42'], '老师新备注');
+});
+test('每日、每月备注按轮次独立保存，未来轮次和单次备注拒绝；清空备注不影响其他轮次', async () => {
+  for (const rule of ['day', 'month']) {
+    const s = setup();
+    let t = await s.api.saveTask(
+        {
+          task: {
+            id: 'notes-' + rule,
+            name: '作业',
+            subject: '英语',
+            semester: '七年级上学期',
+            kind: 'recurring',
+            rule,
+            format: 'text',
+            enabled: true,
+          },
+        },
+        'teacher',
+      ),
+      p = M.period(t, t.created);
+    t = await s.api.saveRoundNote(
+      { taskId: t.id, round: p.key, text: '本轮', expected: t.revision },
+      'teacher',
+    );
+    s.setTime(p.end);
+    const next = M.period(t, p.end);
+    t = await s.api.saveRoundNote(
+      { taskId: t.id, round: next.key, text: '下一轮', expected: t.revision },
+      'teacher',
+    );
+    t = await s.api.saveRoundNote(
+      { taskId: t.id, round: p.key, text: '', expected: t.revision },
+      'teacher',
+    );
+    assert.equal(t.roundNotes[p.key], '');
+    assert.equal(t.roundNotes[next.key], '下一轮');
+  }
+});

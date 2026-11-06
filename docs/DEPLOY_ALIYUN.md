@@ -15,11 +15,11 @@ npm run package:cloud
 
 在`cloud/release/`得到：
 
-| 文件 | 用途 |
-|---|---|
-| `伴学记录云端接口部署包.zip` | 主Web函数，含SDK与网页资源 |
-| `伴学记录云端界面.zip` | 独立网页资源；可作为同域静态界面，或按网页教程配置Netlify |
-| `伴学记录自动备份函数.zip` | 可选Node.js定时备份函数 |
+| 文件                         | 用途                                                      |
+| ---------------------------- | --------------------------------------------------------- |
+| `伴学记录云端接口部署包.zip` | 主Web函数，含SDK与网页资源                                |
+| `伴学记录云端界面.zip`       | 独立网页资源；可作为同域静态界面，或按网页教程配置Netlify |
+| `伴学记录自动备份函数.zip`   | 可选Node.js定时备份函数                                   |
 
 上传主ZIP时，根目录应直接包含`server.cjs`、`core.cjs`、`extras.cjs`、`aliyun.cjs`、`node_modules/`、`public/`，不应额外包一层仓库目录。不要上传`.git`或签名。
 
@@ -31,9 +31,9 @@ npm run package:cloud
 2. 创建Tablestore实例，记录实例名和HTTPS Endpoint；使用宽表模型。
 3. 创建以下两张表，主键类型及顺序必须一致：
 
-| 表名 | 主键 |
-|---|---|
-| `c9_tasks` | `task_id`：STRING |
+| 表名         | 主键                                       |
+| ------------ | ------------------------------------------ |
+| `c9_tasks`   | `task_id`：STRING                          |
 | `c9_records` | `task_id`：STRING，然后`round_key`：STRING |
 
 表TTL设为永久（-1），最大版本数1，无自增主键。属性列`payload`与`revision`由程序写入，不用预建。学习资料、个人设置、消息已读与AI元数据也保存在记录表中的内部命名空间，不用额外建表。
@@ -57,17 +57,17 @@ npm run package:cloud
 
 在FC创建Web函数（非只处理事件的普通handler），运行环境选择自定义Debian12并配置可用Node.js 22层。Node实际路径按运行环境确认。
 
-| 项目 | 建议值 |
-|---|---|
-| 名称 | `banxue-record-api`，可自行命名 |
-| 代码 | 主接口ZIP |
+| 项目     | 建议值                                                              |
+| -------- | ------------------------------------------------------------------- |
+| 名称     | `banxue-record-api`，可自行命名                                     |
+| 代码     | 主接口ZIP                                                           |
 | 启动命令 | `/var/fc/lang/nodejs22/bin/node server.cjs`，须与实际运行时路径一致 |
-| 监听端口 | 9000，代码支持平台`FC_CUSTOM_LISTEN_PORT` |
-| 内存 | 512MB作为双人使用起点，按运行情况调整 |
-| 超时 | 60秒 |
-| 最小实例 | 0；冷启动可能增加首次等待 |
-| 网络 | 允许访问实际OSS/Tablestore Endpoint |
-| 函数角色 | 上一步的限定资源角色 |
+| 监听端口 | 9000，代码支持平台`FC_CUSTOM_LISTEN_PORT`                           |
+| 内存     | 512MB作为双人使用起点，按运行情况调整                               |
+| 超时     | 60秒                                                                |
+| 最小实例 | 0；冷启动可能增加首次等待                                           |
+| 网络     | 允许访问实际OSS/Tablestore Endpoint                                 |
+| 函数角色 | 上一步的限定资源角色                                                |
 
 如果所选环境Node路径不同，应改启动命令；不要用不存在的路径或把`npm install`写成启动命令。依赖已经打包。
 
@@ -79,19 +79,19 @@ npm run package:cloud
 node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 ```
 
-| 变量 | 含义 |
-|---|---|
-| `C9_ACCESS_TOKEN` | App连接用随机访问码，至少32字符 |
-| `C9_TABLESTORE_INSTANCE` | 实际Tablestore实例名 |
-| `C9_TABLESTORE_ENDPOINT` | 实际HTTPS Endpoint |
-| `C9_TASK_TABLE` | `c9_tasks` |
-| `C9_RECORD_TABLE` | `c9_records` |
-| `C9_OSS_REGION` | 如`oss-cn-hangzhou` |
-| `C9_OSS_BUCKET` | 实际私有Bucket名 |
-| `C9_OSS_INTERNAL` | 同地域内网可达时`true` |
-| `C9_ALLOWED_ORIGINS` | 跨域界面来源，用英文逗号连接；安卓通常为`https://localhost`，应以实际来源为准 |
-| `C9_AI_WORKER_TOKEN` | 可选AI电脑独立随机码，必须与App访问码不同；不用AI可删除此项 |
-| `TZ` | `Asia/Shanghai` |
+| 变量                     | 含义                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `C9_ACCESS_TOKEN`        | App连接用随机访问码，至少32字符                                               |
+| `C9_TABLESTORE_INSTANCE` | 实际Tablestore实例名                                                          |
+| `C9_TABLESTORE_ENDPOINT` | 实际HTTPS Endpoint                                                            |
+| `C9_TASK_TABLE`          | `c9_tasks`                                                                    |
+| `C9_RECORD_TABLE`        | `c9_records`                                                                  |
+| `C9_OSS_REGION`          | 如`oss-cn-hangzhou`                                                           |
+| `C9_OSS_BUCKET`          | 实际私有Bucket名                                                              |
+| `C9_OSS_INTERNAL`        | 同地域内网可达时`true`                                                        |
+| `C9_ALLOWED_ORIGINS`     | 跨域界面来源，用英文逗号连接；安卓通常为`https://localhost`，应以实际来源为准 |
+| `C9_AI_WORKER_TOKEN`     | 可选AI电脑独立随机码，必须与App访问码不同；不用AI可删除此项                   |
+| `TZ`                     | `Asia/Shanghai`                                                               |
 
 不要原样使用示例中的`GENERATE_...`占位文字。CORS应列出自己实际使用的来源，网页通过同域代理访问时不需要为该代理添加浏览器跨域授权。本地file调试如确有需要可添加来源`null`；不要无必要开放通配来源。
 
@@ -119,15 +119,15 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 
 在主接口验收后，创建事件函数：
 
-| 项目 | 值 |
-|---|---|
-| 函数名 | `banxue-record-backup` |
-| 运行时 | Node.js20或更新的受支持Node事件运行时，需支持fetch |
-| 代码 | 自动备份ZIP |
-| 入口 | `index.handler` |
-| 超时 | 60秒 |
+| 项目     | 值                                                                |
+| -------- | ----------------------------------------------------------------- |
+| 函数名   | `banxue-record-backup`                                            |
+| 运行时   | Node.js20或更新的受支持Node事件运行时，需支持fetch                |
+| 代码     | 自动备份ZIP                                                       |
+| 入口     | `index.handler`                                                   |
+| 超时     | 60秒                                                              |
 | 环境变量 | `C9_BACKUP_ENDPOINT`为主接口根地址；`C9_ACCESS_TOKEN`与主接口一致 |
-| 网络 | 可访问主接口HTTPS入口 |
+| 网络     | 可访问主接口HTTPS入口                                             |
 
 先手动调用确认ok，再配置定时触发器。若调度采用UTC，`0 0 18 * * *`代表UTC每天18点，即北京时间次日02:00；若控制台提供时区选项，请按所选时区检查下次触发时间，避免偏移。
 
@@ -135,14 +135,14 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 
 ## 排错及升级
 
-| 现象 | 优先检查 |
-|---|---|
-| 401/403 | App访问码、电脑专用码是否混用；CORS；触发器或平台访问策略 |
-| 启动失败 | ZIP根目录、Node路径、监听端口 |
-| 存储连接失败 | 执行角色、主键类型和顺序、地域、实例/Bucket名、网络 |
-| 图片可见而PDF/Word慢 | 首次需下载完整文件并解析；大文件耗时不只来自服务器 |
-| 点评离线 | 电脑服务、OpenClaw、独立码与心跳；不需要关闭应用等待 |
-| 已部署但行为未变 | `/health`的build、实际接口地址；前端和安卓是否也更新 |
+| 现象                 | 优先检查                                                  |
+| -------------------- | --------------------------------------------------------- |
+| 401/403              | App访问码、电脑专用码是否混用；CORS；触发器或平台访问策略 |
+| 启动失败             | ZIP根目录、Node路径、监听端口                             |
+| 存储连接失败         | 执行角色、主键类型和顺序、地域、实例/Bucket名、网络       |
+| 图片可见而PDF/Word慢 | 首次需下载完整文件并解析；大文件耗时不只来自服务器        |
+| 点评离线             | 电脑服务、OpenClaw、独立码与心跳；不需要关闭应用等待      |
+| 已部署但行为未变     | `/health`的build、实际接口地址；前端和安卓是否也更新      |
 
 升级原实例前保存配置并备份。上传新主接口ZIP后保留原环境变量、执行角色、OSS和两张表，不新建空表覆盖已有配置。
 

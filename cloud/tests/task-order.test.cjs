@@ -1,2 +1,35 @@
-const test=require('node:test'),assert=require('node:assert/strict');const {createMemory}=require('../memory.cjs'),{createService}=require('../core.cjs');
-test('学生老师排序独立，跨设备快照同步，过期保存拒绝，作业状态保持不变',async()=>{const m=createMemory(),api=createService(m.store,m.objects),input=id=>({id,name:id,subject:'数学',semester:'七年级上学期',kind:'recurring',rule:'week',format:'text',enabled:true});await api.saveTask({task:input('a')},'teacher');await api.saveTask({task:input('b')},'student');const before=await api.snapshot();await api.saveTaskOrder({ids:['b','a']},'student');await api.saveTaskOrder({ids:['a','b']},'teacher');const after=await api.snapshot();assert.deepEqual(after.taskOrders.student.ids,['b','a']);assert.deepEqual(after.taskOrders.teacher.ids,['a','b']);assert.deepEqual(before.tasks,after.tasks);await assert.rejects(api.saveTaskOrder({ids:['a','b']},'student'),{status:409});await assert.rejects(api.saveTaskOrder({ids:['a','a'],expected:1},'student'),{status:400});await assert.rejects(api.saveTaskOrder({ids:['unknown'],expected:1},'student'),{status:409});await assert.rejects(api.saveTaskOrder({ids:[]},'other'),{status:403});});
+const test = require('node:test'),
+  assert = require('node:assert/strict');
+const { createMemory } = require('../memory.cjs'),
+  { createService } = require('../core.cjs');
+test('学生老师排序独立，跨设备快照同步，过期保存拒绝，作业状态保持不变', async () => {
+  const m = createMemory(),
+    api = createService(m.store, m.objects),
+    input = (id) => ({
+      id,
+      name: id,
+      subject: '数学',
+      semester: '七年级上学期',
+      kind: 'recurring',
+      rule: 'week',
+      format: 'text',
+      enabled: true,
+    });
+  await api.saveTask({ task: input('a') }, 'teacher');
+  await api.saveTask({ task: input('b') }, 'student');
+  const before = await api.snapshot();
+  await api.saveTaskOrder({ ids: ['b', 'a'] }, 'student');
+  await api.saveTaskOrder({ ids: ['a', 'b'] }, 'teacher');
+  const after = await api.snapshot();
+  assert.deepEqual(after.taskOrders.student.ids, ['b', 'a']);
+  assert.deepEqual(after.taskOrders.teacher.ids, ['a', 'b']);
+  assert.deepEqual(before.tasks, after.tasks);
+  await assert.rejects(api.saveTaskOrder({ ids: ['a', 'b'] }, 'student'), { status: 409 });
+  await assert.rejects(api.saveTaskOrder({ ids: ['a', 'a'], expected: 1 }, 'student'), {
+    status: 400,
+  });
+  await assert.rejects(api.saveTaskOrder({ ids: ['unknown'], expected: 1 }, 'student'), {
+    status: 409,
+  });
+  await assert.rejects(api.saveTaskOrder({ ids: [] }, 'other'), { status: 403 });
+});

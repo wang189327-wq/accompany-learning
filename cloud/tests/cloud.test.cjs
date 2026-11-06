@@ -1,22 +1,302 @@
 'use strict';
-const test=require('node:test'),assert=require('node:assert/strict');
-const {randomUUID}=require('node:crypto');
-const {createService}=require('../core.cjs');
-const {createMemory}=require('../memory.cjs');
-const {createServer}=require('../server.cjs');
-const M=globalThis.TaskModel,at=s=>M.parse(s);
-function setup(){const memory=createMemory();let time=at('2026-10-07T10:00');const api=createService(memory.store,memory.objects,()=>time);return {api,memory,setTime:v=>time=v};}
-async function create(api,overrides={}){return api.saveTask({task:{id:randomUUID(),name:'每天作业',subject:'语文',semester:'七年级上学期',kind:'recurring',rule:'day',format:'text',enabled:true,...overrides}},'teacher');}
-async function upload(api,task,content='作业内容',kind='text'){const bytes=Buffer.from(content);const start=await api.beginUpload({taskId:task.id,kind,name:kind==='text'?'作业.txt':'作业.png',size:bytes.length,contentType:kind==='text'?'text/plain':'image/png'},'student');const parts=[];for(let off=0,num=1;off<bytes.length;off+=start.chunkSize,num++)parts.push(await api.uploadPart(start.uploadId,num,bytes.subarray(off,off+start.chunkSize),'student'));await api.finishUpload(start.uploadId,{parts},'student');return start.uploadId;}
-function body(task,uploadIds,overrides={}){return {taskId:task.id,taskRevision:task.revision,requestId:randomUUID(),round:'2026-10-07',selfScore:8,uploadIds,...overrides};}
-test('云端校验角色、学科和评分；忽略手机伪造的完成时间与老师分数',async()=>{const {api}=setup();await assert.rejects(create(api,{subject:'体育'}));await assert.rejects(api.saveTask({task:{}},'visitor'),e=>e.status===403);const t=await create(api),u=await upload(api,t);await assert.rejects(api.submit(body(t,[u],{selfScore:11}),'student'));const r=await api.submit(body(t,[u],{completed:1,teacherScore:10}),'student');assert.equal(r.completed,at('2026-10-07T10:00'));assert.equal(r.teacherScore,null);assert.equal(r.selfScore,8);assert.equal(r.text,'作业内容');await assert.rejects(api.grade({taskId:t.id,round:r.round,score:6,expected:0},'student'),e=>e.status===403);});
-test('网络重试幂等，两个并发提交只能成功一份，不覆盖作业',async()=>{const {api}=setup();const t=await create(api),u=await upload(api,t);const first=body(t,[u]),second=body(t,[u],{selfScore:4});const results=await Promise.allSettled([api.submit(first,'student'),api.submit(second,'student')]);assert.equal(results.filter(x=>x.status==='fulfilled').length,1);const winner=results[0].status==='fulfilled'?first:second;const retry=await api.submit(winner,'student');assert.equal(retry.selfScore,winner.selfScore);assert.equal((await api.snapshot()).records.length,1);await assert.rejects(api.submit({...winner,selfScore:9},'student'),e=>e.status===409);});
-test('老师评分可改，旧版本评分更新被拒绝，自评和内容保持不变',async()=>{const {api}=setup();const t=await create(api),u=await upload(api,t);await api.submit(body(t,[u]),'student');await api.grade({taskId:t.id,round:'2026-10-07',score:6,expected:0},'teacher');await assert.rejects(api.grade({taskId:t.id,round:'2026-10-07',score:10,expected:0},'teacher'),e=>e.status===409);await api.grade({taskId:t.id,round:'2026-10-07',score:4,expected:1},'teacher');const r=(await api.snapshot()).records[0];assert.equal(r.selfScore,8);assert.equal(r.teacherScore,4);assert.equal(r.gradeRevision,2);assert.equal(r.text,'作业内容');});
-test('周三发布任务，下周一开启新轮，旧轮补交紫色',async()=>{const {api,setTime}=setup();const t=await create(api,{rule:'week'}),u=await upload(api,t);setTime(at('2026-10-12T00:00'));const r=await api.submit(body(t,[u],{round:'2026-W41'}),'student');assert.equal(r.late,true);assert.equal(M.status(t,M.period(t,t.created),r,r.completed).color,'purple');assert.equal(M.period(t,r.completed).key,'2026-W42');assert.equal(M.history(t,r.completed).length,2);assert.equal(M.status(t,M.period(t,r.completed),null,r.completed).label,'待完成');});
-test('跨过午夜才真正保存的作业按补交处理',async()=>{const s=setup();s.setTime(at('2026-10-07T23:59'));const t=await create(s.api),u=await upload(s.api,t);const original=s.memory.objects.put;s.memory.objects.put=async(k,b,type)=>{await original(k,b,type);if(k.startsWith('submissions/'))s.setTime(at('2026-10-08T00:00'));};const r=await s.api.submit(body(t,[u]),'student');assert.equal(r.late,true);assert.equal(r.completed,at('2026-10-08T00:00'));});
-test('停用或删除任务拒绝提交；删除后保留图片并可评分',async()=>{const {api}=setup();let t=await create(api,{format:'image'}),u=await upload(api,t,'fake-image-data','image');const r=await api.submit(body(t,[u]),'student');t=(await api.snapshot()).tasks[0];await api.saveTask({task:{...t,deletedAt:1},expected:t.revision},'teacher');await api.grade({taskId:t.id,round:r.round,score:10,expected:0},'teacher');const snapshot=await api.snapshot();assert.ok(snapshot.tasks[0].deletedAt);assert.equal(snapshot.records[0].images.length,1);assert.equal(snapshot.records[0].teacherScore,10);assert.equal((await api.image(u)).bytes.toString(),'fake-image-data');await assert.rejects(api.beginUpload({taskId:t.id,kind:'image',size:1,contentType:'image/png'},'student'),e=>e.status===409);let disabled=await create(api);await api.saveTask({task:{...disabled,enabled:false},expected:disabled.revision},'teacher');await assert.rejects(api.beginUpload({taskId:disabled.id,kind:'text',size:1},'student'),e=>e.status===409);});
-test('长文字分段保存；任务表不会存整份长文字',async()=>{const {api,memory}=setup();const t=await create(api);const content='练习'.repeat(800000);const u=await upload(api,t,content);const r=await api.submit(body(t,[u]),'student');assert.equal(r.text.length,content.length);assert.ok(JSON.stringify(memory.tasks.get(t.id)).length<5000);assert.ok(JSON.stringify([...memory.records.values()][0]).length<5000);});
-test('记录表短暂失败后，从提交凭据恢复成果，不丢失完成状态',async()=>{const {api,memory}=setup();const t=await create(api),u=await upload(api,t);const b=body(t,[u]);const put=memory.store.putRecord;let once=true;memory.store.putRecord=async(...args)=>{if(once){once=false;throw Error('temporary failure');}return put(...args);};await assert.rejects(api.submit(b,'student'));const retry=await api.submit(b,'student');assert.equal(retry.text,'作业内容');assert.equal((await api.snapshot()).records.length,1);});
-test('教师修改已有周期任务的周期和形式，原作业内容和名称独立保留',async()=>{const {api}=setup();const t=await create(api),u=await upload(api,t);await api.submit(body(t,[u]),'student');const fresh=(await api.snapshot()).tasks[0];await api.saveTask({task:{...fresh,rule:'week',format:'image',name:'新任务名',weekDays:[6],startTime:'09:30',endTime:'18:45'},expected:fresh.revision},'teacher');const s=await api.snapshot();assert.equal(s.tasks[0].name,'新任务名');assert.equal(s.tasks[0].format,'image');assert.equal(s.records[0].taskName,'每天作业');assert.equal(s.records[0].format,'text');assert.equal(s.records[0].text,'作业内容');});
-test('部署连接检查验证两张表和文件存储，自动备份保留任务与双方分数',async()=>{const {api,memory}=setup();assert.equal((await api.check()).ok,true);const t=await create(api),u=await upload(api,t);await api.submit(body(t,[u]),'student');await api.grade({taskId:t.id,round:'2026-10-07',score:9,expected:0},'teacher');await assert.rejects(api.backup('student'),e=>e.status===403);const backup=await api.backup('teacher');const saved=JSON.parse(memory.files.get(backup.backupKey).toString());assert.equal(saved.tasks[0].id,t.id);assert.equal(saved.records[0].selfScore,8);assert.equal(saved.records[0].teacherScore,9);assert.equal(memory.files.get(saved.records[0].textKey).toString(),'作业内容');});
-test('HTTP接口鉴权、非法请求、静态界面和完整提交评分流程',async t=>{const memory=createMemory(),token='test-token-'+ 'x'.repeat(40),server=createServer({token,provider:()=>memory,clock:()=>at('2026-10-07T10:00')});await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));const base='http://127.0.0.1:'+server.address().port;const headers={Authorization:'Bearer '+token,'Content-Type':'application/json','X-C9-Role':'teacher'};assert.equal((await fetch(base+'/health')).status,200);assert.equal((await fetch(base+'/api/snapshot')).status,401);assert.equal((await fetch(base+'/api/tasks',{method:'POST',headers,body:'null'})).status,400);const page=await(await fetch(base+'/')).text();assert.ok(page.includes('作业内容'));assert.ok(page.includes('connectionDialog'));let response=await fetch(base+'/api/tasks',{method:'POST',headers,body:JSON.stringify({task:{id:'test-task',name:'联网任务',subject:'数学',semester:'七年级上学期',kind:'once',deadline:at('2026-10-08T00:00'),format:'text',enabled:true}})});assert.equal(response.status,200);const task=await response.json();const api=createService(memory.store,memory.objects,()=>at('2026-10-07T10:00'));const uploadId=await upload(api,task);response=await fetch(base+'/api/submissions',{method:'POST',headers:{...headers,'X-C9-Role':'student'},body:JSON.stringify(body(task,[uploadId],{round:'单次'}))});assert.equal(response.status,200);response=await fetch(base+'/api/grades',{method:'POST',headers,body:JSON.stringify({taskId:task.id,round:'单次',score:9,expected:0})});assert.equal(response.status,200);const s=await(await fetch(base+'/api/snapshot',{headers})).json();assert.equal(s.records[0].teacherScore,9);assert.equal(s.records[0].selfScore,8);});
+const test = require('node:test'),
+  assert = require('node:assert/strict');
+const { randomUUID } = require('node:crypto');
+const { createService } = require('../core.cjs');
+const { createMemory } = require('../memory.cjs');
+const { createServer } = require('../server.cjs');
+const M = globalThis.TaskModel,
+  at = (s) => M.parse(s);
+function setup() {
+  const memory = createMemory();
+  let time = at('2026-10-07T10:00');
+  const api = createService(memory.store, memory.objects, () => time);
+  return { api, memory, setTime: (v) => (time = v) };
+}
+async function create(api, overrides = {}) {
+  return api.saveTask(
+    {
+      task: {
+        id: randomUUID(),
+        name: '每天作业',
+        subject: '语文',
+        semester: '七年级上学期',
+        kind: 'recurring',
+        rule: 'day',
+        format: 'text',
+        enabled: true,
+        ...overrides,
+      },
+    },
+    'teacher',
+  );
+}
+async function upload(api, task, content = '作业内容', kind = 'text') {
+  const bytes = Buffer.from(content);
+  const start = await api.beginUpload(
+    {
+      taskId: task.id,
+      kind,
+      name: kind === 'text' ? '作业.txt' : '作业.png',
+      size: bytes.length,
+      contentType: kind === 'text' ? 'text/plain' : 'image/png',
+    },
+    'student',
+  );
+  const parts = [];
+  for (let off = 0, num = 1; off < bytes.length; off += start.chunkSize, num++)
+    parts.push(
+      await api.uploadPart(
+        start.uploadId,
+        num,
+        bytes.subarray(off, off + start.chunkSize),
+        'student',
+      ),
+    );
+  await api.finishUpload(start.uploadId, { parts }, 'student');
+  return start.uploadId;
+}
+function body(task, uploadIds, overrides = {}) {
+  return {
+    taskId: task.id,
+    taskRevision: task.revision,
+    requestId: randomUUID(),
+    round: '2026-10-07',
+    selfScore: 8,
+    uploadIds,
+    ...overrides,
+  };
+}
+test('云端校验角色、学科和评分；忽略手机伪造的完成时间与老师分数', async () => {
+  const { api } = setup();
+  await assert.rejects(create(api, { subject: '体育' }));
+  await assert.rejects(api.saveTask({ task: {} }, 'visitor'), (e) => e.status === 403);
+  const t = await create(api),
+    u = await upload(api, t);
+  await assert.rejects(api.submit(body(t, [u], { selfScore: 11 }), 'student'));
+  const r = await api.submit(body(t, [u], { completed: 1, teacherScore: 10 }), 'student');
+  assert.equal(r.completed, at('2026-10-07T10:00'));
+  assert.equal(r.teacherScore, null);
+  assert.equal(r.selfScore, 8);
+  assert.equal(r.text, '作业内容');
+  await assert.rejects(
+    api.grade({ taskId: t.id, round: r.round, score: 6, expected: 0 }, 'student'),
+    (e) => e.status === 403,
+  );
+});
+test('网络重试幂等，两个并发提交只能成功一份，不覆盖作业', async () => {
+  const { api } = setup();
+  const t = await create(api),
+    u = await upload(api, t);
+  const first = body(t, [u]),
+    second = body(t, [u], { selfScore: 4 });
+  const results = await Promise.allSettled([
+    api.submit(first, 'student'),
+    api.submit(second, 'student'),
+  ]);
+  assert.equal(results.filter((x) => x.status === 'fulfilled').length, 1);
+  const winner = results[0].status === 'fulfilled' ? first : second;
+  const retry = await api.submit(winner, 'student');
+  assert.equal(retry.selfScore, winner.selfScore);
+  assert.equal((await api.snapshot()).records.length, 1);
+  await assert.rejects(api.submit({ ...winner, selfScore: 9 }, 'student'), (e) => e.status === 409);
+});
+test('老师评分可改，旧版本评分更新被拒绝，自评和内容保持不变', async () => {
+  const { api } = setup();
+  const t = await create(api),
+    u = await upload(api, t);
+  await api.submit(body(t, [u]), 'student');
+  await api.grade({ taskId: t.id, round: '2026-10-07', score: 6, expected: 0 }, 'teacher');
+  await assert.rejects(
+    api.grade({ taskId: t.id, round: '2026-10-07', score: 10, expected: 0 }, 'teacher'),
+    (e) => e.status === 409,
+  );
+  await api.grade({ taskId: t.id, round: '2026-10-07', score: 4, expected: 1 }, 'teacher');
+  const r = (await api.snapshot()).records[0];
+  assert.equal(r.selfScore, 8);
+  assert.equal(r.teacherScore, 4);
+  assert.equal(r.gradeRevision, 2);
+  assert.equal(r.text, '作业内容');
+});
+test('周三发布任务，下周一开启新轮，旧轮补交紫色', async () => {
+  const { api, setTime } = setup();
+  const t = await create(api, { rule: 'week' }),
+    u = await upload(api, t);
+  setTime(at('2026-10-12T00:00'));
+  const r = await api.submit(body(t, [u], { round: '2026-W41' }), 'student');
+  assert.equal(r.late, true);
+  assert.equal(M.status(t, M.period(t, t.created), r, r.completed).color, 'purple');
+  assert.equal(M.period(t, r.completed).key, '2026-W42');
+  assert.equal(M.history(t, r.completed).length, 2);
+  assert.equal(M.status(t, M.period(t, r.completed), null, r.completed).label, '待完成');
+});
+test('跨过午夜才真正保存的作业按补交处理', async () => {
+  const s = setup();
+  s.setTime(at('2026-10-07T23:59'));
+  const t = await create(s.api),
+    u = await upload(s.api, t);
+  const original = s.memory.objects.put;
+  s.memory.objects.put = async (k, b, type) => {
+    await original(k, b, type);
+    if (k.startsWith('submissions/')) s.setTime(at('2026-10-08T00:00'));
+  };
+  const r = await s.api.submit(body(t, [u]), 'student');
+  assert.equal(r.late, true);
+  assert.equal(r.completed, at('2026-10-08T00:00'));
+});
+test('停用或删除任务拒绝提交；删除后保留图片并可评分', async () => {
+  const { api } = setup();
+  let t = await create(api, { format: 'image' }),
+    u = await upload(api, t, 'fake-image-data', 'image');
+  const r = await api.submit(body(t, [u]), 'student');
+  t = (await api.snapshot()).tasks[0];
+  await api.saveTask({ task: { ...t, deletedAt: 1 }, expected: t.revision }, 'teacher');
+  await api.grade({ taskId: t.id, round: r.round, score: 10, expected: 0 }, 'teacher');
+  const snapshot = await api.snapshot();
+  assert.ok(snapshot.tasks[0].deletedAt);
+  assert.equal(snapshot.records[0].images.length, 1);
+  assert.equal(snapshot.records[0].teacherScore, 10);
+  assert.equal((await api.image(u)).bytes.toString(), 'fake-image-data');
+  await assert.rejects(
+    api.beginUpload({ taskId: t.id, kind: 'image', size: 1, contentType: 'image/png' }, 'student'),
+    (e) => e.status === 409,
+  );
+  let disabled = await create(api);
+  await api.saveTask(
+    { task: { ...disabled, enabled: false }, expected: disabled.revision },
+    'teacher',
+  );
+  await assert.rejects(
+    api.beginUpload({ taskId: disabled.id, kind: 'text', size: 1 }, 'student'),
+    (e) => e.status === 409,
+  );
+});
+test('长文字分段保存；任务表不会存整份长文字', async () => {
+  const { api, memory } = setup();
+  const t = await create(api);
+  const content = '练习'.repeat(800000);
+  const u = await upload(api, t, content);
+  const r = await api.submit(body(t, [u]), 'student');
+  assert.equal(r.text.length, content.length);
+  assert.ok(JSON.stringify(memory.tasks.get(t.id)).length < 5000);
+  assert.ok(JSON.stringify([...memory.records.values()][0]).length < 5000);
+});
+test('记录表短暂失败后，从提交凭据恢复成果，不丢失完成状态', async () => {
+  const { api, memory } = setup();
+  const t = await create(api),
+    u = await upload(api, t);
+  const b = body(t, [u]);
+  const put = memory.store.putRecord;
+  let once = true;
+  memory.store.putRecord = async (...args) => {
+    if (once) {
+      once = false;
+      throw Error('temporary failure');
+    }
+    return put(...args);
+  };
+  await assert.rejects(api.submit(b, 'student'));
+  const retry = await api.submit(b, 'student');
+  assert.equal(retry.text, '作业内容');
+  assert.equal((await api.snapshot()).records.length, 1);
+});
+test('教师修改已有周期任务的周期和形式，原作业内容和名称独立保留', async () => {
+  const { api } = setup();
+  const t = await create(api),
+    u = await upload(api, t);
+  await api.submit(body(t, [u]), 'student');
+  const fresh = (await api.snapshot()).tasks[0];
+  await api.saveTask(
+    {
+      task: {
+        ...fresh,
+        rule: 'week',
+        format: 'image',
+        name: '新任务名',
+        weekDays: [6],
+        startTime: '09:30',
+        endTime: '18:45',
+      },
+      expected: fresh.revision,
+    },
+    'teacher',
+  );
+  const s = await api.snapshot();
+  assert.equal(s.tasks[0].name, '新任务名');
+  assert.equal(s.tasks[0].format, 'image');
+  assert.equal(s.records[0].taskName, '每天作业');
+  assert.equal(s.records[0].format, 'text');
+  assert.equal(s.records[0].text, '作业内容');
+});
+test('部署连接检查验证两张表和文件存储，自动备份保留任务与双方分数', async () => {
+  const { api, memory } = setup();
+  assert.equal((await api.check()).ok, true);
+  const t = await create(api),
+    u = await upload(api, t);
+  await api.submit(body(t, [u]), 'student');
+  await api.grade({ taskId: t.id, round: '2026-10-07', score: 9, expected: 0 }, 'teacher');
+  await assert.rejects(api.backup('student'), (e) => e.status === 403);
+  const backup = await api.backup('teacher');
+  const saved = JSON.parse(memory.files.get(backup.backupKey).toString());
+  assert.equal(saved.tasks[0].id, t.id);
+  assert.equal(saved.records[0].selfScore, 8);
+  assert.equal(saved.records[0].teacherScore, 9);
+  assert.equal(memory.files.get(saved.records[0].textKey).toString(), '作业内容');
+});
+test('HTTP接口鉴权、非法请求、静态界面和完整提交评分流程', async (t) => {
+  const memory = createMemory(),
+    token = 'test-token-' + 'x'.repeat(40),
+    server = createServer({ token, provider: () => memory, clock: () => at('2026-10-07T10:00') });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  t.after(() => new Promise((r) => server.close(r)));
+  const base = 'http://127.0.0.1:' + server.address().port;
+  const headers = {
+    Authorization: 'Bearer ' + token,
+    'Content-Type': 'application/json',
+    'X-C9-Role': 'teacher',
+  };
+  assert.equal((await fetch(base + '/health')).status, 200);
+  assert.equal((await fetch(base + '/api/snapshot')).status, 401);
+  assert.equal(
+    (await fetch(base + '/api/tasks', { method: 'POST', headers, body: 'null' })).status,
+    400,
+  );
+  const page = await (await fetch(base + '/')).text();
+  assert.ok(page.includes('作业内容'));
+  assert.ok(page.includes('connectionDialog'));
+  let response = await fetch(base + '/api/tasks', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      task: {
+        id: 'test-task',
+        name: '联网任务',
+        subject: '数学',
+        semester: '七年级上学期',
+        kind: 'once',
+        deadline: at('2026-10-08T00:00'),
+        format: 'text',
+        enabled: true,
+      },
+    }),
+  });
+  assert.equal(response.status, 200);
+  const task = await response.json();
+  const api = createService(memory.store, memory.objects, () => at('2026-10-07T10:00'));
+  const uploadId = await upload(api, task);
+  response = await fetch(base + '/api/submissions', {
+    method: 'POST',
+    headers: { ...headers, 'X-C9-Role': 'student' },
+    body: JSON.stringify(body(task, [uploadId], { round: '单次' })),
+  });
+  assert.equal(response.status, 200);
+  response = await fetch(base + '/api/grades', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ taskId: task.id, round: '单次', score: 9, expected: 0 }),
+  });
+  assert.equal(response.status, 200);
+  const s = await (await fetch(base + '/api/snapshot', { headers })).json();
+  assert.equal(s.records[0].teacherScore, 9);
+  assert.equal(s.records[0].selfScore, 8);
+});

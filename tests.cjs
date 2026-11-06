@@ -1,114 +1,256 @@
-const {URLSearchParams}=require('node:url');
+const { URLSearchParams } = require('node:url');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const context = vm.createContext({});
 vm.runInContext(fs.readFileSync(path.join(__dirname, 'model.js'), 'utf8'), context);
-const M=context.TaskModel, at=s=>M.parse(s);
-const submit=(...args)=>M.submission(...args,8);
-const task={id:'t1',name:'每周阅读',subject:'语文',kind:'recurring',rule:'week',format:'text',enabled:true,created:at('2026-10-07T10:00')};
-assert.equal(M.period(task,task.created).key,'2026-W41');
-assert.equal(M.period(task,at('2026-10-11T23:59')).key,'2026-W41');
-assert.equal(M.period(task,at('2026-10-12T00:00')).key,'2026-W42');
-assert.equal(M.history(task,at('2026-10-12T00:00')).length,2);
-assert.equal(M.period(task,at('2027-01-01T12:00')).key,'2026-W53');
-assert.equal(M.period(task,at('2027-01-04T00:00')).key,'2027-W01');
-assert.equal(M.display(task.created),'2026-10-07 10:00');
-const current=M.period(task,task.created);
-assert.equal(M.status(task,current,null,task.created).label,'待完成');
-const normal=submit(task,current.key,task.created,'成果',[]);
-assert.equal(normal.late,false);
-assert.equal(M.status(task,current,normal,task.created).color,'green');
-const late=submit(task,'2026-W41',at('2026-10-12T00:00'),'补交',[]);
-assert.equal(late.late,true);
-assert.equal(M.status(task,current,late,late.completed).color,'purple');
-assert.equal(M.status(task,M.period(task,late.completed),null,late.completed).color,'amber');
-assert.equal(M.status(task,current,null,late.completed).color,'red');
-const month={...task,rule:'month'};
-assert.equal(M.period(month,at('2026-10-31T23:59')).key,'2026-10');
-assert.equal(M.period(month,at('2026-11-01T00:00')).key,'2026-11');
-assert.equal(M.history(month,at('2026-11-01T00:00')).length,2);
-assert.equal(M.period(month,at('2028-02-29T23:59')).end,at('2028-03-01T00:00'));
-const once={...task,kind:'once',deadline:at('2026-10-09T12:00')};
-assert.equal(M.history(once,at('2030-01-01T00:00')).length,1);
-assert.equal(M.status(once,M.period(once,task.created),null,at('2026-10-09T12:01')).color,'red');
-const onceLate=submit(once,'单次',at('2026-10-09T12:01'),'晚交',[]);
-assert.equal(onceLate.late,true);
-assert.equal(M.status(once,M.period(once,task.created),onceLate,onceLate.completed).label,'逾期完成');
-assert.equal(M.status(once,M.period(once,task.created),onceLate,onceLate.completed).color,'green');
-assert.throws(()=>submit({...task,enabled:false},current.key,task.created,'内容',[]));
-assert.throws(()=>submit({...task,deletedAt:task.created},current.key,task.created,'内容',[]));
-assert.throws(()=>submit(task,'2026-W42',task.created,'内容',[]));
-assert.throws(()=>submit(task,current.key,task.created,' ',[]));
-assert.throws(()=>submit({...task,format:'image'},current.key,task.created,'',[]));
-assert.equal(submit({...task,format:'image'},current.key,task.created,'',[{name:'a'},{name:'b'}]).images.length,2);
-assert.throws(()=>M.validateTask({...once,deadline:null}));
-assert.throws(()=>M.validateTask({...task,name:' '}));
-assert.equal(M.history({...task,deletedAt:at('2026-10-13T12:00')},at('2026-11-01T00:00')).length,2);
-assert.equal(normal.taskName,'每周阅读');
-assert.equal(normal.taskId,'t1');
-new vm.Script(fs.readFileSync(path.join(__dirname,'app.js'),'utf8'));
+const M = context.TaskModel,
+  at = (s) => M.parse(s);
+const submit = (...args) => M.submission(...args, 8);
+const task = {
+  id: 't1',
+  name: '每周阅读',
+  subject: '语文',
+  kind: 'recurring',
+  rule: 'week',
+  format: 'text',
+  enabled: true,
+  created: at('2026-10-07T10:00'),
+};
+assert.equal(M.period(task, task.created).key, '2026-W41');
+assert.equal(M.period(task, at('2026-10-11T23:59')).key, '2026-W41');
+assert.equal(M.period(task, at('2026-10-12T00:00')).key, '2026-W42');
+assert.equal(M.history(task, at('2026-10-12T00:00')).length, 2);
+assert.equal(M.period(task, at('2027-01-01T12:00')).key, '2026-W53');
+assert.equal(M.period(task, at('2027-01-04T00:00')).key, '2027-W01');
+assert.equal(M.display(task.created), '2026-10-07 10:00');
+const current = M.period(task, task.created);
+assert.equal(M.status(task, current, null, task.created).label, '待完成');
+const normal = submit(task, current.key, task.created, '成果', []);
+assert.equal(normal.late, false);
+assert.equal(M.status(task, current, normal, task.created).color, 'green');
+const late = submit(task, '2026-W41', at('2026-10-12T00:00'), '补交', []);
+assert.equal(late.late, true);
+assert.equal(M.status(task, current, late, late.completed).color, 'purple');
+assert.equal(M.status(task, M.period(task, late.completed), null, late.completed).color, 'amber');
+assert.equal(M.status(task, current, null, late.completed).color, 'red');
+const month = { ...task, rule: 'month' };
+assert.equal(M.period(month, at('2026-10-31T23:59')).key, '2026-10');
+assert.equal(M.period(month, at('2026-11-01T00:00')).key, '2026-11');
+assert.equal(M.history(month, at('2026-11-01T00:00')).length, 2);
+assert.equal(M.period(month, at('2028-02-29T23:59')).end, at('2028-03-01T00:00'));
+const once = { ...task, kind: 'once', deadline: at('2026-10-09T12:00') };
+assert.equal(M.history(once, at('2030-01-01T00:00')).length, 1);
+assert.equal(
+  M.status(once, M.period(once, task.created), null, at('2026-10-09T12:01')).color,
+  'red',
+);
+const onceLate = submit(once, '单次', at('2026-10-09T12:01'), '晚交', []);
+assert.equal(onceLate.late, true);
+assert.equal(
+  M.status(once, M.period(once, task.created), onceLate, onceLate.completed).label,
+  '逾期完成',
+);
+assert.equal(
+  M.status(once, M.period(once, task.created), onceLate, onceLate.completed).color,
+  'green',
+);
+assert.throws(() => submit({ ...task, enabled: false }, current.key, task.created, '内容', []));
+assert.throws(() =>
+  submit({ ...task, deletedAt: task.created }, current.key, task.created, '内容', []),
+);
+assert.throws(() => submit(task, '2026-W42', task.created, '内容', []));
+assert.throws(() => submit(task, current.key, task.created, ' ', []));
+assert.throws(() => submit({ ...task, format: 'image' }, current.key, task.created, '', []));
+assert.equal(
+  submit({ ...task, format: 'image' }, current.key, task.created, '', [
+    { name: 'a' },
+    { name: 'b' },
+  ]).images.length,
+  2,
+);
+assert.throws(() => M.validateTask({ ...once, deadline: null }));
+assert.throws(() => M.validateTask({ ...task, name: ' ' }));
+assert.equal(
+  M.history({ ...task, deletedAt: at('2026-10-13T12:00') }, at('2026-11-01T00:00')).length,
+  2,
+);
+assert.equal(normal.taskName, '每周阅读');
+assert.equal(normal.taskId, 't1');
+new vm.Script(fs.readFileSync(path.join(__dirname, 'app.js'), 'utf8'));
 console.log('通过：北京时间、跨周/月/年、无限周期、补交、逾期、提交校验、任务删除历史与应用语法。');
 
-const daily={...task,rule:'day'};
-assert.equal(M.period(daily,at('2026-10-07T23:59')).key,'2026-10-07');
-assert.equal(M.period(daily,at('2026-10-08T00:00')).key,'2026-10-08');
-assert.equal(M.period(daily,at('2026-10-08T00:00')).end,at('2026-10-09T00:00'));
-assert.equal(M.history(daily,at('2026-10-09T12:00')).length,3);
-const dailyLate=submit(daily,'2026-10-07',at('2026-10-08T00:00'),'每日补交',[]);
-assert.equal(dailyLate.late,true);
-assert.equal(dailyLate.subject,'语文');
-assert.equal(M.status(daily,M.period(daily,task.created),dailyLate,dailyLate.completed).color,'purple');
-assert.doesNotThrow(()=>M.validateTask({...task,subject:''}));
-assert.throws(()=>M.validateTask({...task,subject:'体育'}));
-assert.doesNotThrow(()=>M.validateTask({...daily}));
-assert.doesNotThrow(()=>M.validateTask({...task,subject:undefined},{allowLegacySubject:true}));
-const sample=[task,{...task,id:'math',name:'数学阅读练习',subject:'数学'},{...task,id:'eng',name:'English Reading',subject:'英语'},{...task,id:'old',name:'旧任务',subject:undefined}];
-assert.equal(M.filterHistory(sample,' 阅读 ','').length,2);
-assert.equal(M.filterHistory(sample,'阅读','数学')[0].id,'math');
-assert.equal(M.filterHistory(sample,'english','英语').length,1);
-assert.equal(M.filterHistory(sample,'不存在','').length,0);
-assert.equal(M.filterHistory(sample,'','unset')[0].id,'old');
-function renderFixture(testMode){
- const elements=new Map();
- const get=id=>{if(!elements.has(id))elements.set(id,{innerHTML:'',textContent:'',classList:{toggle(){},add(){},remove(){}},addEventListener(){},setAttribute(){},closest(){return this;},querySelector(){return this;},querySelectorAll(){return [];},open:false});return elements.get(id);};
- const browser=vm.createContext({MyUI:{unread(){return 0;}},StudyUI:{set(){},taskTabs(){return '';},taskMode:'records'},TaskModel:M,document:{body:{insertAdjacentHTML(){},append(){}},getElementById:get,querySelector(){return get('header');},addEventListener(){},activeElement:null},window:{addEventListener(){}},location:{search:testMode?'?test=1':''},URLSearchParams,crypto:{randomUUID:()=> 'test'},indexedDB:{open:()=>({})},setInterval(){},setTimeout(){},Date,console});
- vm.runInContext(fs.readFileSync(path.join(__dirname,'task-order.js'),'utf8'),browser);vm.runInContext(fs.readFileSync(path.join(__dirname,'app.js'),'utf8'),browser);
- vm.runInContext("role='student';tasks="+JSON.stringify(sample.slice(0,2))+";records=["+JSON.stringify(normal)+"];testTime="+task.created+";render();",browser);
- const home=get('app').innerHTML;
- assert.ok(home.indexOf('未完成任务')<home.indexOf('已完成任务'));
- assert.ok(home.slice(home.indexOf('未完成任务'),home.indexOf('已完成任务')).includes('数学阅读练习'));
- assert.ok(home.slice(home.indexOf('已完成任务')).includes('每周阅读'));
- for(const id of ['backup','restore','testToggle'])assert.equal(home.includes('id=\"'+id+'\"'),testMode);
- vm.runInContext("tab='history';searchName='阅读';searchSubject='数学';render();",browser);
- const filtered=get('historyResults').innerHTML||vm.runInContext('historyResults()',browser);
- assert.ok(filtered.includes('数学阅读练习'));
- assert.ok(!filtered.includes('每周阅读'));
- assert.ok(get('app').innerHTML.includes('历史任务'));
- // This fixture checks rendered content; live DOM reuse is exercised in qa-sync44.cjs.
- vm.runInContext("StudyUI.state={task:{completion:'all'}};syncMarkup=(target,html)=>{target.innerHTML=html;};selected='t1';role='student';renderDetail();",browser);
- const details=get('detailBody').innerHTML;
- assert.ok(!details.includes('完成作业记得打卡哦~ 路虽远，行则将至'));
- assert.ok(details.includes('完成时间：2026-10-07 10:00'));
- assert.ok(details.includes('成果'));
- assert.ok(details.includes('作业自评分：'));
- assert.ok(details.includes('8 / 10 分'));
- assert.ok(!details.includes('data-grade='));
- vm.runInContext("role='teacher';renderDetail();",browser);
- assert.ok(get('detailBody').innerHTML.includes('data-grade='));
- vm.runInContext("records[0].teacherScore=6;role='student';renderDetail();",browser);
- assert.ok(get('detailBody').innerHTML.includes('class="scoreYellow">6 / 10 分'));
+const daily = { ...task, rule: 'day' };
+assert.equal(M.period(daily, at('2026-10-07T23:59')).key, '2026-10-07');
+assert.equal(M.period(daily, at('2026-10-08T00:00')).key, '2026-10-08');
+assert.equal(M.period(daily, at('2026-10-08T00:00')).end, at('2026-10-09T00:00'));
+assert.equal(M.history(daily, at('2026-10-09T12:00')).length, 3);
+const dailyLate = submit(daily, '2026-10-07', at('2026-10-08T00:00'), '每日补交', []);
+assert.equal(dailyLate.late, true);
+assert.equal(dailyLate.subject, '语文');
+assert.equal(
+  M.status(daily, M.period(daily, task.created), dailyLate, dailyLate.completed).color,
+  'purple',
+);
+assert.doesNotThrow(() => M.validateTask({ ...task, subject: '' }));
+assert.throws(() => M.validateTask({ ...task, subject: '体育' }));
+assert.doesNotThrow(() => M.validateTask({ ...daily }));
+assert.doesNotThrow(() =>
+  M.validateTask({ ...task, subject: undefined }, { allowLegacySubject: true }),
+);
+const sample = [
+  task,
+  { ...task, id: 'math', name: '数学阅读练习', subject: '数学' },
+  { ...task, id: 'eng', name: 'English Reading', subject: '英语' },
+  { ...task, id: 'old', name: '旧任务', subject: undefined },
+];
+assert.equal(M.filterHistory(sample, ' 阅读 ', '').length, 2);
+assert.equal(M.filterHistory(sample, '阅读', '数学')[0].id, 'math');
+assert.equal(M.filterHistory(sample, 'english', '英语').length, 1);
+assert.equal(M.filterHistory(sample, '不存在', '').length, 0);
+assert.equal(M.filterHistory(sample, '', 'unset')[0].id, 'old');
+function renderFixture(testMode) {
+  const elements = new Map();
+  const get = (id) => {
+    if (!elements.has(id))
+      elements.set(id, {
+        innerHTML: '',
+        textContent: '',
+        classList: { toggle() {}, add() {}, remove() {} },
+        addEventListener() {},
+        setAttribute() {},
+        closest() {
+          return this;
+        },
+        querySelector() {
+          return this;
+        },
+        querySelectorAll() {
+          return [];
+        },
+        open: false,
+      });
+    return elements.get(id);
+  };
+  const browser = vm.createContext({
+    MyUI: {
+      unread() {
+        return 0;
+      },
+    },
+    StudyUI: {
+      set() {},
+      taskTabs() {
+        return '';
+      },
+      taskMode: 'records',
+    },
+    TaskModel: M,
+    document: {
+      body: { insertAdjacentHTML() {}, append() {} },
+      getElementById: get,
+      querySelector() {
+        return get('header');
+      },
+      addEventListener() {},
+      activeElement: null,
+    },
+    window: { addEventListener() {} },
+    location: { search: testMode ? '?test=1' : '' },
+    URLSearchParams,
+    crypto: { randomUUID: () => 'test' },
+    indexedDB: { open: () => ({}) },
+    setInterval() {},
+    setTimeout() {},
+    Date,
+    console,
+  });
+  vm.runInContext(fs.readFileSync(path.join(__dirname, 'task-order.js'), 'utf8'), browser);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, 'task-views.js'), 'utf8'), browser);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, 'app.js'), 'utf8'), browser);
+  vm.runInContext(
+    "role='student';tasks=" +
+      JSON.stringify(sample.slice(0, 2)) +
+      ';records=[' +
+      JSON.stringify(normal) +
+      '];testTime=' +
+      task.created +
+      ';render();',
+    browser,
+  );
+  const home = get('app').innerHTML;
+  assert.ok(home.indexOf('未完成任务') < home.indexOf('已完成任务'));
+  assert.ok(
+    home.slice(home.indexOf('未完成任务'), home.indexOf('已完成任务')).includes('数学阅读练习'),
+  );
+  assert.ok(home.slice(home.indexOf('已完成任务')).includes('每周阅读'));
+  for (const id of ['backup', 'restore', 'testToggle'])
+    assert.equal(home.includes('id=\"' + id + '\"'), testMode);
+  vm.runInContext("tab='history';searchName='阅读';searchSubject='数学';render();", browser);
+  const filtered = get('historyResults').innerHTML || vm.runInContext('historyResults()', browser);
+  assert.ok(filtered.includes('数学阅读练习'));
+  assert.ok(!filtered.includes('每周阅读'));
+  assert.ok(get('app').innerHTML.includes('历史任务'));
+  // This fixture checks rendered content; live DOM reuse is exercised in qa-sync44.cjs.
+  vm.runInContext(
+    "StudyUI.state={task:{completion:'all'}};syncMarkup=(target,html)=>{target.innerHTML=html;};selected='t1';role='student';renderDetail();",
+    browser,
+  );
+  const details = get('detailBody').innerHTML;
+  assert.ok(!details.includes('完成作业记得打卡哦~ 路虽远，行则将至'));
+  assert.ok(details.includes('完成时间：2026-10-07 10:00'));
+  assert.ok(details.includes('成果'));
+  assert.ok(details.includes('作业自评分：'));
+  assert.ok(details.includes('8 / 10 分'));
+  assert.ok(!details.includes('data-grade='));
+  vm.runInContext("role='teacher';renderDetail();", browser);
+  assert.ok(get('detailBody').innerHTML.includes('data-grade='));
+  vm.runInContext("records[0].teacherScore=6;role='student';renderDetail();", browser);
+  assert.ok(get('detailBody').innerHTML.includes('class="scoreYellow">6 / 10 分'));
 }
-renderFixture(false);renderFixture(true);
+renderFixture(false);
+renderFixture(true);
 console.log('新增检查通过：每日周期、学科选填、旧数据兼容、组合筛选、完成分栏及测试工具隐藏。');
 
-for(const bad of [undefined,null,'8',-1,11,5.5,NaN])assert.throws(()=>M.submission(task,current.key,task.created,'成果',[],bad));
-for(const [score,color] of [[0,'scoreRed'],[4,'scoreRed'],[5,'scoreYellow'],[7,'scoreYellow'],[8,'scoreGreen'],[10,'scoreGreen']]){assert.equal(M.scoreColor(score),color);assert.equal(M.submission(task,current.key,task.created,'成果',[],score).selfScore,score);}
-const graded=M.grade(normal,7,task.created+1000);
-assert.equal(graded.teacherScore,7);assert.equal(graded.selfScore,8);assert.equal(graded.text,normal.text);assert.equal(graded.completed,normal.completed);assert.equal(graded.gradeRevision,1);assert.equal(normal.teacherScore,null);
-const revised=M.grade(graded,10,task.created+2000);assert.equal(revised.teacherScore,10);assert.equal(revised.gradeRevision,2);assert.equal(revised.selfScore,8);assert.throws(()=>M.grade(normal,11,task.created));
-const picture=M.submission({...task,format:'image'},current.key,task.created,'',[{name:'test.png'}],0);assert.equal(M.grade(picture,5,task.created).images,picture.images);
-const nextWeek=at('2026-10-12T00:00');assert.equal(M.period(task,nextWeek).key,'2026-W42');assert.equal(M.status(task,M.period(task,nextWeek),null,nextWeek).label,'待完成');assert.equal(M.history(task,nextWeek).length,2);
-console.log('评分检查通过：必填整数、颜色阈值、内容不可变、老师修改评分、双方历史展示和周一新轮次。');
-
+for (const bad of [undefined, null, '8', -1, 11, 5.5, NaN])
+  assert.throws(() => M.submission(task, current.key, task.created, '成果', [], bad));
+for (const [score, color] of [
+  [0, 'scoreRed'],
+  [4, 'scoreRed'],
+  [5, 'scoreYellow'],
+  [7, 'scoreYellow'],
+  [8, 'scoreGreen'],
+  [10, 'scoreGreen'],
+]) {
+  assert.equal(M.scoreColor(score), color);
+  assert.equal(M.submission(task, current.key, task.created, '成果', [], score).selfScore, score);
+}
+const graded = M.grade(normal, 7, task.created + 1000);
+assert.equal(graded.teacherScore, 7);
+assert.equal(graded.selfScore, 8);
+assert.equal(graded.text, normal.text);
+assert.equal(graded.completed, normal.completed);
+assert.equal(graded.gradeRevision, 1);
+assert.equal(normal.teacherScore, null);
+const revised = M.grade(graded, 10, task.created + 2000);
+assert.equal(revised.teacherScore, 10);
+assert.equal(revised.gradeRevision, 2);
+assert.equal(revised.selfScore, 8);
+assert.throws(() => M.grade(normal, 11, task.created));
+const picture = M.submission(
+  { ...task, format: 'image' },
+  current.key,
+  task.created,
+  '',
+  [{ name: 'test.png' }],
+  0,
+);
+assert.equal(M.grade(picture, 5, task.created).images, picture.images);
+const nextWeek = at('2026-10-12T00:00');
+assert.equal(M.period(task, nextWeek).key, '2026-W42');
+assert.equal(M.status(task, M.period(task, nextWeek), null, nextWeek).label, '待完成');
+assert.equal(M.history(task, nextWeek).length, 2);
+console.log(
+  '评分检查通过：必填整数、颜色阈值、内容不可变、老师修改评分、双方历史展示和周一新轮次。',
+);

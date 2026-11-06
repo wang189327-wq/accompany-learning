@@ -4,7 +4,9 @@
   "private": true,
   "description": "伴学记录：双人学习任务、资料、成绩与可选AI点评",
   "license": "MIT",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "node cloud/build.cjs",
     "build:web": "node scripts/build-web.cjs",
@@ -12,6 +14,11 @@
     "dev": "node scripts/dev.cjs",
     "test": "node scripts/test.cjs",
     "test:apk": "node --test android/asset-paths.test.cjs",
-    "check:public": "node scripts/check-public.cjs"
+    "check:public": "node scripts/check-public.cjs",
+    "format": "node scripts/format.cjs",
+    "format:check": "node scripts/format.cjs --check"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10"
   }
 }

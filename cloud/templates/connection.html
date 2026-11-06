@@ -1,0 +1,18 @@
+<dialog id="connectionDialog">
+  <div class="dialogHead"><h3>连接学习计划</h3></div>
+  <form id="connectionForm">
+    <label
+      >云端地址<input id="apiEndpoint" type="url" required placeholder="https://你的云端接口地址"
+    /></label>
+    <label
+      >访问码<input
+        id="connectionToken"
+        type="password"
+        required
+        autocomplete="off"
+        placeholder="首次配置时填写"
+    /></label>
+    <div id="connectionError" class="error"></div>
+    <button type="submit" class="primary">连接并保存</button>
+  </form>
+</dialog>
