@@ -43,6 +43,8 @@ npm run dev
 
 ## 构建与检查
 
+通过ZIP下载源码时先执行`git init`，供格式及公开内容检查列出项目文件；通过`git clone`取得的仓库无需这一步。
+
 ```sh
 npm run format:check
 npm test
