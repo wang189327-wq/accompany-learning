@@ -1,1 +1,4 @@
-$('checkUpdate').addEventListener('click',()=>{if(typeof C9Android==='undefined')toast('网页版刷新即可使用最新界面；安卓安装包请在 App 内检查更新。');});
+$('checkUpdate').addEventListener('click', () => {
+  if (typeof C9Android === 'undefined')
+    toast('网页版刷新即可使用最新界面；安卓安装包请在 App 内检查更新。');
+});

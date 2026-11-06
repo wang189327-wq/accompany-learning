@@ -1,16 +1,89 @@
-const assert=require('node:assert/strict'),X=require('./my-model.js');require('./model.js');const M=global.TaskModel;
-let t=X.table();t.rows.push(['2025','甲学校','600','20','650','100']);t.rowHeights.push(null);t.rows[0]=['2024','乙学校','','','',''];
-const m=X.bounds(t,{r:0,c:0},{r:1,c:1});assert.throws(()=>X.merge(t,m));const merged=X.merge(t,m,'all');assert.equal(merged.rows[0][0],'2024\n乙学校\n2025\n甲学校');assert.equal(merged.rows[1][1],'');assert.equal(merged.merges.length,1);assert.equal(t.merges.length,0);
-assert.deepEqual(X.bounds(merged,{r:1,c:1},{r:1,c:2}),{r:0,c:0,h:2,w:3});const unmerged=X.unmerge(merged,m);assert.equal(unmerged.merges.length,0);assert.equal(unmerged.rows[0][0],merged.rows[0][0]);const deleted=X.deleteRow(merged,0);assert.equal(deleted.rows[0][0],merged.rows[0][0]);assert.equal(deleted.merges[0].h,1);assert.throws(()=>X.deleteRow(X.table(),0));
-const rowBefore=X.insertRow(merged,0);assert.equal(rowBefore.rows.length,3);assert.deepEqual(rowBefore.merges[0],{r:1,c:0,h:2,w:2});
-const rowInside=X.insertRow(merged,1);assert.deepEqual(rowInside.merges[0],{r:0,c:0,h:3,w:2});
-const colBefore=X.insertColumn(merged,0);assert.equal(colBefore.headers.length,7);assert.deepEqual(colBefore.merges[0],{r:0,c:1,h:2,w:2});
-const colInside=X.insertColumn(merged,1);assert.equal(colInside.rows[0].length,7);assert.deepEqual(colInside.merges[0],{r:0,c:0,h:2,w:3});assert.equal(colInside.headers[1],'新列');
-const deleteAnchor=X.deleteColumn(merged,0);assert.equal(deleteAnchor.headers.length,5);assert.equal(deleteAnchor.rows[0][0],merged.rows[0][0]);assert.deepEqual(deleteAnchor.merges[0],{r:0,c:0,h:2,w:1});assert.equal(merged.headers.length,6);
-const deleteBefore=X.deleteColumn(X.insertColumn(merged,0),0);assert.deepEqual(deleteBefore.merges,merged.merges);assert.deepEqual(deleteBefore.rows,merged.rows);
-let lastColumn=X.table();for(let i=0;i<5;i++)lastColumn=X.deleteColumn(lastColumn,0);assert.equal(lastColumn.headers.length,1);assert.throws(()=>X.deleteColumn(lastColumn,0),/至少保留一列/);
-assert.deepEqual(X.goals({数学:{full:'120',score:'100',rank:'1'}},M.SUBJECTS),{数学:{full:120,score:100,rank:1}});for(const rank of ['0','-1','1.2',''])assert.throws(()=>X.goals({数学:{full:'120',score:'100',rank}},M.SUBJECTS));assert.throws(()=>X.goals({数学:{full:'120',score:'121',rank:'1'}},M.SUBJECTS));assert.deepEqual(X.goals({},M.SUBJECTS),{});
-const at=M.parse('2026-10-13T22:00'),task={id:'day',name:'测试',created:M.parse('2026-10-13T10:00'),kind:'recurring',rule:'day',enabled:true,reminder:{amount:2,unit:'hours'}};
-assert.equal(X.due(task,[],at-1,M),null);const due=X.due(task,[],at,M);assert.equal(due.round,'2026-10-13');assert.equal(X.due(task,[{taskId:task.id,round:due.round}],at,M),null);for(const extra of [{enabled:false},{deletedAt:at},{pausedRounds:[due.round]}])assert.equal(X.due({...task,...extra},[],at,M),null);
-assert.notEqual(X.due(task,[],at+M.DAY,M).id,due.id);const weekly={...task,rule:'week',reminder:{amount:1,unit:'days'}};assert.equal(X.due(weekly,[],M.parse('2026-10-18T00:00'),M).round,'2026-W42');assert.equal(X.due(weekly,[],M.parse('2026-10-17T23:59'),M),null);const monthly={...task,rule:'month'};assert.equal(X.due(monthly,[],M.parse('2026-10-31T22:00'),M).round,'2026-10');assert.equal(X.due({...task,kind:'once',deadline:at+3600000,reminder:{amount:1,unit:'hours'}},[],at,M).round,'单次');assert.throws(()=>X.reminder({amount:0,unit:'hours'}));
-console.log('通过：合并区域、内容保留、取消合并、指定位置插入行列、删行、目标校验、日/周/月/单次提醒边界、完成/停用/暂停提醒排除。');
+const assert = require('node:assert/strict'),
+  X = require('./my-model.js');
+require('./model.js');
+const M = global.TaskModel;
+let t = X.table();
+t.rows.push(['2025', '甲学校', '600', '20', '650', '100']);
+t.rowHeights.push(null);
+t.rows[0] = ['2024', '乙学校', '', '', '', ''];
+const m = X.bounds(t, { r: 0, c: 0 }, { r: 1, c: 1 });
+assert.throws(() => X.merge(t, m));
+const merged = X.merge(t, m, 'all');
+assert.equal(merged.rows[0][0], '2024\n乙学校\n2025\n甲学校');
+assert.equal(merged.rows[1][1], '');
+assert.equal(merged.merges.length, 1);
+assert.equal(t.merges.length, 0);
+assert.deepEqual(X.bounds(merged, { r: 1, c: 1 }, { r: 1, c: 2 }), { r: 0, c: 0, h: 2, w: 3 });
+const unmerged = X.unmerge(merged, m);
+assert.equal(unmerged.merges.length, 0);
+assert.equal(unmerged.rows[0][0], merged.rows[0][0]);
+const deleted = X.deleteRow(merged, 0);
+assert.equal(deleted.rows[0][0], merged.rows[0][0]);
+assert.equal(deleted.merges[0].h, 1);
+assert.throws(() => X.deleteRow(X.table(), 0));
+const rowBefore = X.insertRow(merged, 0);
+assert.equal(rowBefore.rows.length, 3);
+assert.deepEqual(rowBefore.merges[0], { r: 1, c: 0, h: 2, w: 2 });
+const rowInside = X.insertRow(merged, 1);
+assert.deepEqual(rowInside.merges[0], { r: 0, c: 0, h: 3, w: 2 });
+const colBefore = X.insertColumn(merged, 0);
+assert.equal(colBefore.headers.length, 7);
+assert.deepEqual(colBefore.merges[0], { r: 0, c: 1, h: 2, w: 2 });
+const colInside = X.insertColumn(merged, 1);
+assert.equal(colInside.rows[0].length, 7);
+assert.deepEqual(colInside.merges[0], { r: 0, c: 0, h: 2, w: 3 });
+assert.equal(colInside.headers[1], '新列');
+const deleteAnchor = X.deleteColumn(merged, 0);
+assert.equal(deleteAnchor.headers.length, 5);
+assert.equal(deleteAnchor.rows[0][0], merged.rows[0][0]);
+assert.deepEqual(deleteAnchor.merges[0], { r: 0, c: 0, h: 2, w: 1 });
+assert.equal(merged.headers.length, 6);
+const deleteBefore = X.deleteColumn(X.insertColumn(merged, 0), 0);
+assert.deepEqual(deleteBefore.merges, merged.merges);
+assert.deepEqual(deleteBefore.rows, merged.rows);
+let lastColumn = X.table();
+for (let i = 0; i < 5; i++) lastColumn = X.deleteColumn(lastColumn, 0);
+assert.equal(lastColumn.headers.length, 1);
+assert.throws(() => X.deleteColumn(lastColumn, 0), /至少保留一列/);
+assert.deepEqual(X.goals({ 数学: { full: '120', score: '100', rank: '1' } }, M.SUBJECTS), {
+  数学: { full: 120, score: 100, rank: 1 },
+});
+for (const rank of ['0', '-1', '1.2', ''])
+  assert.throws(() => X.goals({ 数学: { full: '120', score: '100', rank } }, M.SUBJECTS));
+assert.throws(() => X.goals({ 数学: { full: '120', score: '121', rank: '1' } }, M.SUBJECTS));
+assert.deepEqual(X.goals({}, M.SUBJECTS), {});
+const at = M.parse('2026-10-13T22:00'),
+  task = {
+    id: 'day',
+    name: '测试',
+    created: M.parse('2026-10-13T10:00'),
+    kind: 'recurring',
+    rule: 'day',
+    enabled: true,
+    reminder: { amount: 2, unit: 'hours' },
+  };
+assert.equal(X.due(task, [], at - 1, M), null);
+const due = X.due(task, [], at, M);
+assert.equal(due.round, '2026-10-13');
+assert.equal(X.due(task, [{ taskId: task.id, round: due.round }], at, M), null);
+for (const extra of [{ enabled: false }, { deletedAt: at }, { pausedRounds: [due.round] }])
+  assert.equal(X.due({ ...task, ...extra }, [], at, M), null);
+assert.notEqual(X.due(task, [], at + M.DAY, M).id, due.id);
+const weekly = { ...task, rule: 'week', reminder: { amount: 1, unit: 'days' } };
+assert.equal(X.due(weekly, [], M.parse('2026-10-18T00:00'), M).round, '2026-W42');
+assert.equal(X.due(weekly, [], M.parse('2026-10-17T23:59'), M), null);
+const monthly = { ...task, rule: 'month' };
+assert.equal(X.due(monthly, [], M.parse('2026-10-31T22:00'), M).round, '2026-10');
+assert.equal(
+  X.due(
+    { ...task, kind: 'once', deadline: at + 3600000, reminder: { amount: 1, unit: 'hours' } },
+    [],
+    at,
+    M,
+  ).round,
+  '单次',
+);
+assert.throws(() => X.reminder({ amount: 0, unit: 'hours' }));
+console.log(
+  '通过：合并区域、内容保留、取消合并、指定位置插入行列、删行、目标校验、日/周/月/单次提醒边界、完成/停用/暂停提醒排除。',
+);

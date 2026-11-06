@@ -44,6 +44,7 @@ npm run dev
 ## 构建与检查
 
 ```sh
+npm run format:check
 npm test
 npm run check:public
 npm run package:cloud
@@ -55,16 +56,20 @@ GitHub Actions在Windows/Linux上运行源码检查、自动化测试和云端�
 
 ## 目录
 
-| 路径 | 作用 |
-|---|---|
-| 根目录JS、HTML、CSS | 界面、业务模型、预览及主题 |
-| `cloud/` | 主接口、存储适配、快照优化、部署打包 |
-| `android/` | 安卓WebView、文件保存、安装更新和桌面组件 |
-| `desktop-review/` | 可选电脑AI点评服务 |
-| `scripts/` | 配置、测试、演示、网页及更新文件生成 |
-| `docs/` | 当前部署与维护教程 |
-| `deploy/` | 网页部署模板 |
-| `third-party-notices/`、`pdf-*/` | 第三方预览组件的授权及资源 |
+参与修改请从[贡献指南](CONTRIBUTING.md)开始。另有[架构与调用流程](docs/ARCHITECTURE.md)、[修改位置导航](docs/DEVELOPMENT.md)和[数据结构与关键规则](docs/DATA_MODEL.md)。自有代码统一格式，第三方分发和冻结兼容夹具保持原样。
+
+新增的`build/`集中维护平台脚本清单、HTML命名区域，以及网页和安卓资源的构建过程。
+
+| 路径                             | 作用                                      |
+| -------------------------------- | ----------------------------------------- |
+| 根目录JS、HTML、CSS              | 界面、业务模型、预览及主题                |
+| `cloud/`                         | 主接口、存储适配、快照优化、部署打包      |
+| `android/`                       | 安卓WebView、文件保存、安装更新和桌面组件 |
+| `desktop-review/`                | 可选电脑AI点评服务                        |
+| `scripts/`                       | 配置、测试、演示、网页及更新文件生成      |
+| `docs/`                          | 当前部署与维护教程                        |
+| `deploy/`                        | 网页部署模板                              |
+| `third-party-notices/`、`pdf-*/` | 第三方预览组件的授权及资源                |
 
 为兼容既有数据，包名`cn.c9.studyplan`、部分内部C9标识和环境变量名保留。自行构建者应保管自己的签名；不同签名的APK不能互相覆盖安装。
 

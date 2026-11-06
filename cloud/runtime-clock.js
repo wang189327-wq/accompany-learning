@@ -1,1 +1,1 @@
-const now=()=>Cloud.time();
+const now = () => Cloud.time();

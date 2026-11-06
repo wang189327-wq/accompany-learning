@@ -1,30 +1,303 @@
 'use strict';
-const {randomUUID,createHash}=require('node:crypto');
-const OFFLINE='Open Claw暂未在线，请稍后重试';
-function createReviews(store,objects,clock,fail,load){
- const SYSTEM='__c9_ai__',RESULTS='__c9_ai_results__';
- const key=(taskId,slot)=>createHash('sha256').update(JSON.stringify([taskId,slot])).digest('hex');
- const get=()=>store.getRecord(SYSTEM,'state');
- const batches=require('./review-batches.cjs').createBatches(store,clock,fail);
- async function change(fn){for(let n=0;n<6;n++){const old=await get(),value=await fn(old||{});if(!value)return old;const next={...value,taskId:SYSTEM,round:'state',gradeRevision:(old?.gradeRevision||0)+1};try{await store.putRecord(next,old?.gradeRevision??null);return next;}catch(e){if(e.status!==409||n===5)throw e;}}}
- const alive=s=>!!s?.ready&&Number.isFinite(s.lastSeen)&&clock()-s.lastSeen<35000&&clock()>=s.lastSeen;
- const active=j=>j&&['waiting','running'].includes(j.status)&&j.deadline>clock();
- const checkWho=who=>{if(!['teacher','student'].includes(who))fail(403,'请先选择老师或学生身份');};
- function safeJob(job){if(!job)return null;const {id,taskId,slot,status,error,deadline}=job;return {id,taskId,recordKey:slot,status:active(job)?status:['waiting','running'].includes(status)?'failed':status,error:active(job)?null:error||(status==='waiting'?OFFLINE:status==='running'?'点评请求已超时，请重新点击点评作业':null),deadline};}
- async function cacheReview(taskId,slot,review){for(let i=0;i<6;i++){const old=await store.getRecord(taskId,slot);if(!old)return;if(old.reviewCache?.completed>=review.completed)return;try{await store.putRecord({...old,reviewCache:review,reviewUpdatedAt:review.completed},old.gradeRevision);return;}catch(e){if(e.status!==409||i===5)throw e;}}}
- async function getReview(taskId,slot,meta){if(meta?.reviewCache)return meta.reviewCache;const value=await store.getRecord(RESULTS,key(taskId,slot));if(!value)return null;const review={text:(await objects.get(value.textKey)).toString('utf8'),completed:value.completed};if(meta)try{await cacheReview(taskId,slot,review);}catch{}return review;}
- return {
-  getReview,workerBatch:batches.save,
-  async requestReview(body,who){checkWho(who);if(typeof body.requestId!=='string'||!/^[-a-zA-Z0-9_]{8,100}$/.test(body.requestId))fail(400,'点评请求编号无效');const {record}=await load(body.taskId,body.recordKey||body.round);if(record.format==='file')fail(400,'文件形式作业暂不支持AI点评，请老师查看文件后评分');if(record.automatic)fail(400,'默认打卡没有作业内容可点评');if(record.aiReview?.text)return {id:'saved-'+key(record.taskId,record.recordKey),taskId:record.taskId,recordKey:record.recordKey,status:'done',existing:true};const current=await get();if(active(current?.job)&&current.job.taskId===record.taskId&&current.job.slot===record.recordKey)return safeJob(current.job);if(current?.job?.id===body.requestId)return safeJob(current.job);if(!alive(current))fail(503,OFFLINE);
-   const next=await change(old=>{if(old.job?.id===body.requestId)return null;if(!alive(old))fail(503,OFFLINE);if(active(old.job))fail(409,'Open Claw正在点评其他作业，请稍后重试');return {...old,job:{id:body.requestId,taskId:record.taskId,slot:record.recordKey,startedAt:clock(),status:'waiting',deadline:clock()+30000}};});return safeJob(next.job);
-  },
-  async reviewStatus(jobId,who){checkWho(who);if(/^saved-[a-f0-9]{64}$/.test(jobId||'')){const result=await store.getRecord(RESULTS,jobId.slice(6));if(!result)fail(404,'点评结果不存在');return {id:jobId,status:'done',review:await getReview(result.submissionTaskId,result.slot)};}const s=await get();if(!s?.job||s.job.id!==jobId)fail(404,'点评请求已结束，请重新打开作业查看结果');return {...safeJob(s.job),review:s.job.status==='done'?await getReview(s.job.taskId,s.job.slot):null};},
-  async workerPoll(body){if(typeof body.workerId!=='string'||!/^[-a-zA-Z0-9_]{8,100}$/.test(body.workerId))fail(400,'电脑服务编号无效');let claimed=false;const next=await change(old=>{claimed=false;const value={...old,ready:body.ready===true,lastSeen:clock()};if(value.ready&&old.job?.status==='waiting'&&old.job.deadline>clock()){value.job={...old.job,status:'running',workerId:body.workerId,claim:randomUUID(),deadline:clock()+300000};claimed=true;}return value;});if(!claimed)return {ok:true,job:null};const job=next.job;try{await batches.claim(job);const {record,task}=await load(job.taskId,job.slot);const images=[];for(const im of record.images||[]){if(im.size>10*1024*1024)fail(413,'图片超过点评服务单张10MB限制，请使用清晰且较小的图片');images.push({url:await objects.url(im.key),contentType:im.contentType||'image/jpeg'});}return {ok:true,job:{...job,taskName:record.taskName,subject:record.subject,taskNote:task.note||'',roundNote:task.roundNotes?.[record.round]||'',text:record.textKey?(await objects.get(record.textKey)).toString('utf8'):'',images}};}catch(e){await change(old=>old.job?.claim===job.claim?{...old,job:{...old.job,status:'failed',error:e.status?e.message:'无法读取作业内容，请重试'}}:null);throw e;}
-  },
-  async workerResult(body){let restored=null;if(body.batchCount!=null){restored=await batches.complete(body);body={...body,text:restored.text};}const s=await get(),job=restored?.job||s?.job;if(!restored&&(!job||job.id!==body.jobId||job.claim!==body.claim||job.workerId!==body.workerId||job.status!=='running'||job.deadline<=clock()))fail(409,'点评请求已失效');if(body.error){await change(old=>old.job?.claim===body.claim&&active(old.job)?{...old,job:{...old.job,status:'failed',error:({model_limit:'Open Claw当前GPT额度不足或请求受限，请稍后重试；原有点评已保留',model_timeout:'Open Claw点评超时，请稍后重试；原有点评已保留',gateway_auth:'Open Claw本机验证失败，请检查电脑点评服务；原有点评已保留'})[body.errorCode]||'点评未完成，请稍后重试；原有点评已保留'}}:null);return {ok:true};}
-   if(typeof body.text!=='string'||!body.text.trim()||body.text.length>16000)fail(400,'点评内容为空或过长');const text=body.text.trim(),textKey='ai-reviews/'+job.id+'.txt',completed=clock();const round=key(job.taskId,job.slot);const existing=await store.getRecord(RESULTS,round);if(existing){await change(old=>old.job?.id===job.id?{...old,job:{...old.job,status:'done',error:null}}:null);return {ok:true,alreadySaved:true};}await objects.put(textKey,Buffer.from(text),'text/plain; charset=utf-8');for(let i=0;i<6;i++){const old=await store.getRecord(RESULTS,round);if(old)return {ok:true,alreadySaved:true};try{await store.putRecord({taskId:RESULTS,round,textKey,completed,generationId:job.id,startedAt:job.startedAt||completed,submissionTaskId:job.taskId,slot:job.slot,gradeRevision:(old?.gradeRevision||0)+1},old?.gradeRevision??null);break;}catch(e){if(e.status!==409||i===5)throw e;}}try{await cacheReview(job.taskId,job.slot,{text,completed});}catch{}
-   await change(old=>old.job?.claim===body.claim?{...old,job:{...old.job,status:'done',error:null}}:null);return {ok:true};
+const { randomUUID, createHash } = require('node:crypto');
+const OFFLINE = 'Open Claw暂未在线，请稍后重试';
+function createReviews(store, objects, clock, fail, load) {
+  const SYSTEM = '__c9_ai__',
+    RESULTS = '__c9_ai_results__';
+  const key = (taskId, slot) =>
+    createHash('sha256')
+      .update(JSON.stringify([taskId, slot]))
+      .digest('hex');
+  const get = () => store.getRecord(SYSTEM, 'state');
+  const batches = require('./review-batches.cjs').createBatches(store, clock, fail);
+  async function change(fn) {
+    for (let n = 0; n < 6; n++) {
+      const old = await get(),
+        value = await fn(old || {});
+      if (!value) return old;
+      const next = {
+        ...value,
+        taskId: SYSTEM,
+        round: 'state',
+        gradeRevision: (old?.gradeRevision || 0) + 1,
+      };
+      try {
+        await store.putRecord(next, old?.gradeRevision ?? null);
+        return next;
+      } catch (e) {
+        if (e.status !== 409 || n === 5) throw e;
+      }
+    }
   }
- };
+  const alive = (s) =>
+    !!s?.ready &&
+    Number.isFinite(s.lastSeen) &&
+    clock() - s.lastSeen < 35000 &&
+    clock() >= s.lastSeen;
+  const active = (j) => j && ['waiting', 'running'].includes(j.status) && j.deadline > clock();
+  const checkWho = (who) => {
+    if (!['teacher', 'student'].includes(who)) fail(403, '请先选择老师或学生身份');
+  };
+  function safeJob(job) {
+    if (!job) return null;
+    const { id, taskId, slot, status, error, deadline } = job;
+    return {
+      id,
+      taskId,
+      recordKey: slot,
+      status: active(job) ? status : ['waiting', 'running'].includes(status) ? 'failed' : status,
+      error: active(job)
+        ? null
+        : error ||
+          (status === 'waiting'
+            ? OFFLINE
+            : status === 'running'
+              ? '点评请求已超时，请重新点击点评作业'
+              : null),
+      deadline,
+    };
+  }
+  async function cacheReview(taskId, slot, review) {
+    for (let i = 0; i < 6; i++) {
+      const old = await store.getRecord(taskId, slot);
+      if (!old) return;
+      if (old.reviewCache?.completed >= review.completed) return;
+      try {
+        await store.putRecord(
+          { ...old, reviewCache: review, reviewUpdatedAt: review.completed },
+          old.gradeRevision,
+        );
+        return;
+      } catch (e) {
+        if (e.status !== 409 || i === 5) throw e;
+      }
+    }
+  }
+  async function getReview(taskId, slot, meta) {
+    if (meta?.reviewCache) return meta.reviewCache;
+    const value = await store.getRecord(RESULTS, key(taskId, slot));
+    if (!value) return null;
+    const review = {
+      text: (await objects.get(value.textKey)).toString('utf8'),
+      completed: value.completed,
+    };
+    if (meta)
+      try {
+        await cacheReview(taskId, slot, review);
+      } catch {}
+    return review;
+  }
+  return {
+    getReview,
+    workerBatch: batches.save,
+    async requestReview(body, who) {
+      checkWho(who);
+      if (typeof body.requestId !== 'string' || !/^[-a-zA-Z0-9_]{8,100}$/.test(body.requestId))
+        fail(400, '点评请求编号无效');
+      const { record } = await load(body.taskId, body.recordKey || body.round);
+      if (record.format === 'file') fail(400, '文件形式作业暂不支持AI点评，请老师查看文件后评分');
+      if (record.automatic) fail(400, '默认打卡没有作业内容可点评');
+      if (record.aiReview?.text)
+        return {
+          id: 'saved-' + key(record.taskId, record.recordKey),
+          taskId: record.taskId,
+          recordKey: record.recordKey,
+          status: 'done',
+          existing: true,
+        };
+      const current = await get();
+      if (
+        active(current?.job) &&
+        current.job.taskId === record.taskId &&
+        current.job.slot === record.recordKey
+      )
+        return safeJob(current.job);
+      if (current?.job?.id === body.requestId) return safeJob(current.job);
+      if (!alive(current)) fail(503, OFFLINE);
+      const next = await change((old) => {
+        if (old.job?.id === body.requestId) return null;
+        if (!alive(old)) fail(503, OFFLINE);
+        if (active(old.job)) fail(409, 'Open Claw正在点评其他作业，请稍后重试');
+        return {
+          ...old,
+          job: {
+            id: body.requestId,
+            taskId: record.taskId,
+            slot: record.recordKey,
+            startedAt: clock(),
+            status: 'waiting',
+            deadline: clock() + 30000,
+          },
+        };
+      });
+      return safeJob(next.job);
+    },
+    async reviewStatus(jobId, who) {
+      checkWho(who);
+      if (/^saved-[a-f0-9]{64}$/.test(jobId || '')) {
+        const result = await store.getRecord(RESULTS, jobId.slice(6));
+        if (!result) fail(404, '点评结果不存在');
+        return {
+          id: jobId,
+          status: 'done',
+          review: await getReview(result.submissionTaskId, result.slot),
+        };
+      }
+      const s = await get();
+      if (!s?.job || s.job.id !== jobId) fail(404, '点评请求已结束，请重新打开作业查看结果');
+      return {
+        ...safeJob(s.job),
+        review: s.job.status === 'done' ? await getReview(s.job.taskId, s.job.slot) : null,
+      };
+    },
+    async workerPoll(body) {
+      if (typeof body.workerId !== 'string' || !/^[-a-zA-Z0-9_]{8,100}$/.test(body.workerId))
+        fail(400, '电脑服务编号无效');
+      let claimed = false;
+      const next = await change((old) => {
+        claimed = false;
+        const value = { ...old, ready: body.ready === true, lastSeen: clock() };
+        if (value.ready && old.job?.status === 'waiting' && old.job.deadline > clock()) {
+          value.job = {
+            ...old.job,
+            status: 'running',
+            workerId: body.workerId,
+            claim: randomUUID(),
+            deadline: clock() + 300000,
+          };
+          claimed = true;
+        }
+        return value;
+      });
+      if (!claimed) return { ok: true, job: null };
+      const job = next.job;
+      try {
+        await batches.claim(job);
+        const { record, task } = await load(job.taskId, job.slot);
+        const images = [];
+        for (const im of record.images || []) {
+          if (im.size > 10 * 1024 * 1024)
+            fail(413, '图片超过点评服务单张10MB限制，请使用清晰且较小的图片');
+          images.push({
+            url: await objects.url(im.key),
+            contentType: im.contentType || 'image/jpeg',
+          });
+        }
+        return {
+          ok: true,
+          job: {
+            ...job,
+            taskName: record.taskName,
+            subject: record.subject,
+            taskNote: task.note || '',
+            roundNote: task.roundNotes?.[record.round] || '',
+            text: record.textKey ? (await objects.get(record.textKey)).toString('utf8') : '',
+            images,
+          },
+        };
+      } catch (e) {
+        await change((old) =>
+          old.job?.claim === job.claim
+            ? {
+                ...old,
+                job: {
+                  ...old.job,
+                  status: 'failed',
+                  error: e.status ? e.message : '无法读取作业内容，请重试',
+                },
+              }
+            : null,
+        );
+        throw e;
+      }
+    },
+    async workerResult(body) {
+      let restored = null;
+      if (body.batchCount != null) {
+        restored = await batches.complete(body);
+        body = { ...body, text: restored.text };
+      }
+      const s = await get(),
+        job = restored?.job || s?.job;
+      if (
+        !restored &&
+        (!job ||
+          job.id !== body.jobId ||
+          job.claim !== body.claim ||
+          job.workerId !== body.workerId ||
+          job.status !== 'running' ||
+          job.deadline <= clock())
+      )
+        fail(409, '点评请求已失效');
+      if (body.error) {
+        await change((old) =>
+          old.job?.claim === body.claim && active(old.job)
+            ? {
+                ...old,
+                job: {
+                  ...old.job,
+                  status: 'failed',
+                  error:
+                    {
+                      model_limit: 'Open Claw当前GPT额度不足或请求受限，请稍后重试；原有点评已保留',
+                      model_timeout: 'Open Claw点评超时，请稍后重试；原有点评已保留',
+                      gateway_auth: 'Open Claw本机验证失败，请检查电脑点评服务；原有点评已保留',
+                    }[body.errorCode] || '点评未完成，请稍后重试；原有点评已保留',
+                },
+              }
+            : null,
+        );
+        return { ok: true };
+      }
+      if (typeof body.text !== 'string' || !body.text.trim() || body.text.length > 16000)
+        fail(400, '点评内容为空或过长');
+      const text = body.text.trim(),
+        textKey = 'ai-reviews/' + job.id + '.txt',
+        completed = clock();
+      const round = key(job.taskId, job.slot);
+      const existing = await store.getRecord(RESULTS, round);
+      if (existing) {
+        await change((old) =>
+          old.job?.id === job.id
+            ? { ...old, job: { ...old.job, status: 'done', error: null } }
+            : null,
+        );
+        return { ok: true, alreadySaved: true };
+      }
+      await objects.put(textKey, Buffer.from(text), 'text/plain; charset=utf-8');
+      for (let i = 0; i < 6; i++) {
+        const old = await store.getRecord(RESULTS, round);
+        if (old) return { ok: true, alreadySaved: true };
+        try {
+          await store.putRecord(
+            {
+              taskId: RESULTS,
+              round,
+              textKey,
+              completed,
+              generationId: job.id,
+              startedAt: job.startedAt || completed,
+              submissionTaskId: job.taskId,
+              slot: job.slot,
+              gradeRevision: (old?.gradeRevision || 0) + 1,
+            },
+            old?.gradeRevision ?? null,
+          );
+          break;
+        } catch (e) {
+          if (e.status !== 409 || i === 5) throw e;
+        }
+      }
+      try {
+        await cacheReview(job.taskId, job.slot, { text, completed });
+      } catch {}
+      await change((old) =>
+        old.job?.claim === body.claim
+          ? { ...old, job: { ...old.job, status: 'done', error: null } }
+          : null,
+      );
+      return { ok: true };
+    },
+  };
 }
-module.exports={createReviews,OFFLINE};
+module.exports = { createReviews, OFFLINE };
