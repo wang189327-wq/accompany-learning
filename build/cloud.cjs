@@ -26,7 +26,7 @@ async function build() {
     await fs.cp(path.join(root, name), path.join(out, name), { recursive: true });
   }
   // Backend and browser use the same business model source.
-  for (const name of ['model.js', 'study-model.js', 'my-model.js']) {
+  for (const name of ['model.js', 'study-model.js', 'my-model.js', 'assignment-groups.js']) {
     await fs.copyFile(path.join(root, name), path.join(cloud, name));
   }
 

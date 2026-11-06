@@ -96,7 +96,7 @@ async function fixture() {
   return mem;
 }
 const plain = (x) => JSON.parse(JSON.stringify(x));
-test('普通全量/增量同步各仅一次任务及资料读取，原版与新版快照逐项等价，记录最多6路并发且顺序不变', async () => {
+test('普通全量/增量同步各仅一次作业及资料读取，原版与新版快照逐项等价，记录最多6路并发且顺序不变', async () => {
   for (const since of [undefined, base - 2500, base - M.DAY]) {
     const seed = await fixture(),
       old = copy(seed),
@@ -108,6 +108,8 @@ test('普通全量/增量同步各仅一次任务及资料读取，原版与新�
       return oldList();
     };
     const expected = await previous(old.store, old.objects, () => base).snapshot(since);
+    expected.assignmentGroups = [];
+    expected.features.assignmentGroups = true;
     let lists = 0,
       library = 0,
       active = 0,
@@ -158,7 +160,7 @@ test('普通全量/增量同步各仅一次任务及资料读取，原版与新�
     );
   }
 });
-test('自动打卡/提醒/旧任务迁移同次可见，冲突后采用最新任务，不覆盖另设备修改', async () => {
+test('自动打卡/提醒/旧作业迁移同次可见，冲突后采用最新作业，不覆盖另设备修改', async () => {
   for (const mode of ['auto', 'reminder', 'legacy']) {
     const mem = createMemory(),
       api = createService(mem.store, mem.objects, () => base);
@@ -166,7 +168,7 @@ test('自动打卡/提醒/旧任务迁移同次可见，冲突后采用最新任
       {
         task: {
           id: 'conflict',
-          name: '原任务',
+          name: '原作业',
           kind: 'recurring',
           rule: 'day',
           format: mode === 'auto' ? 'auto' : 'text',
@@ -239,7 +241,7 @@ test('读取失败不返回部分快照，等待已经启动的记录操作完�
   assert.equal(active, 0);
   assert.equal((await api.snapshot()).records.length, 54);
 });
-test('任务副本只在本次请求内复用，下次同步重新读取，新修改和新增立即可见', async () => {
+test('作业副本只在本次请求内复用，下次同步重新读取，新修改和新增立即可见', async () => {
   const mem = createMemory(),
     api = createService(mem.store, mem.objects, () => base);
   let reads = 0;
@@ -251,13 +253,13 @@ test('任务副本只在本次请求内复用，下次同步重新读取，新�
   const task = await api.saveTask({ task: { id: 'fresh', name: '修改前' } }, 'teacher');
   assert.equal((await api.snapshot()).tasks[0].name, '修改前');
   await api.saveTask({ task: { ...task, name: '修改后' }, expected: task.revision }, 'teacher');
-  await api.saveTask({ task: { id: 'new', name: '新任务' } }, 'student');
+  await api.saveTask({ task: { id: 'new', name: '新作业' } }, 'student');
   const second = await api.snapshot();
   assert.equal(reads, 2);
   assert.equal(second.tasks.length, 2);
   assert.equal(second.tasks.find((t) => t.id === 'fresh').name, '修改后');
 });
-test('桌面组件快照也只读取一次任务，输出内容和排列与原版一致', async () => {
+test('桌面组件快照也只读取一次作业，输出内容和排列与原版一致', async () => {
   const seed = await fixture(),
     a = copy(seed),
     b = copy(seed);

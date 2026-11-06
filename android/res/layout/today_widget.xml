@@ -3,6 +3,6 @@
         <TextView android:id="@+id/widget_title" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="日期" android:textStyle="bold" android:textSize="16sp" android:textColor="#203431" />
         <TextView android:id="@+id/widget_refresh" android:layout_width="60dp" android:layout_height="44dp" android:gravity="center" android:text="刷新" android:textSize="14sp" android:textColor="#225d4c" android:contentDescription="刷新今天日程" />
     </LinearLayout>
-    <ListView android:id="@+id/widget_list" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:divider="@android:color/transparent" android:dividerHeight="0dp" android:scrollbars="vertical" android:contentDescription="可上下滑动的任务列表" />
+    <ListView android:id="@+id/widget_list" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:divider="@android:color/transparent" android:dividerHeight="0dp" android:scrollbars="vertical" android:contentDescription="可上下滑动的作业列表" />
     <TextView android:id="@+id/widget_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="请先打开App同步" android:textSize="11sp" android:textColor="#65766c" />
 </LinearLayout>

@@ -63,8 +63,9 @@ function createServer(options = {}) {
           ok: true,
           service: '伴学记录',
           version: '1.6.0',
-          build: 54,
+          build: 55,
           features: {
+            assignmentGroups: true,
             snapshotOptimized: true,
             folderDelete: true,
             historyCleanup: true,
@@ -114,6 +115,8 @@ function createServer(options = {}) {
           '/startup-watch.js': 'startup-watch.js',
           '/study-model.js': 'study-model.js',
           '/study-ui.js': 'study-ui.js',
+          '/assignment-groups.js': 'assignment-groups.js',
+          '/assignment-groups-ui.js': 'assignment-groups-ui.js',
           '/task-order.js': 'task-order.js',
           '/image-zoom.js': 'image-zoom.js',
           '/file-viewer.js': 'file-viewer.js',
@@ -270,6 +273,10 @@ function createServer(options = {}) {
       }
       if (p === '/api/tasks/pause') {
         send(200, await service.pauseRound(body, who));
+        return;
+      }
+      if (p === '/api/assignment-groups') {
+        send(200, await service.publishAssignmentGroup(body, who));
         return;
       }
       if (p === '/api/tasks') {

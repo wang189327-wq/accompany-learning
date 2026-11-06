@@ -1,5 +1,7 @@
 # 架构与调用流程
 
+4.0在原作业业务外增加独立任务目录。`assignment-groups.js`供本地/云端共用校验；`assignment-groups-ui.js`创建发布表单和关键词选择器；`cloud/assignment-groups.cjs`复用记录表的独立分区保存目录，不进入作业列表、周期遍历或AI提交路径。旧作业的内部`task`命名及关联键不变，新增可空`assignmentGroupId`。
+
 ## 运行位置
 
 ```mermaid

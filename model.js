@@ -125,7 +125,7 @@
     return { label: '待完成', color: 'amber' };
   }
   const removedTests = {
-    '0b4d2fc1-514a-4783-bb2f-47713af1c375': '测试任务',
+    '0b4d2fc1-514a-4783-bb2f-47713af1c375': '测试作业',
     '0bc8fb74-74cc-488b-a5e5-e310f7513b68': '图片上传',
     'e2etest-20261010': 'E2E验收测试',
   };
@@ -206,11 +206,11 @@
       throw Error('请选择有效学科');
     if (task.requiresTeaching !== undefined && typeof task.requiresTeaching !== 'boolean')
       throw Error('授课选项无效');
-    if (typeof task.name !== 'string' || !task.name.trim()) throw Error('请填写任务名称');
-    if (!['once', 'recurring'].includes(task.kind)) throw Error('任务类型无效');
+    if (typeof task.name !== 'string' || !task.name.trim()) throw Error('请填写作业名称');
+    if (!['once', 'recurring'].includes(task.kind)) throw Error('作业类型无效');
     if (!['text', 'image', 'auto', 'file'].includes(task.format)) throw Error('提交形式无效');
     if (task.kind === 'once' && !Number.isFinite(task.deadline))
-      throw Error('单次任务必须填写截止时间');
+      throw Error('单次作业必须填写截止时间');
     if (task.kind === 'recurring' && !['day', 'week', 'month'].includes(task.rule))
       throw Error('请选择周期规则');
     if (
@@ -236,12 +236,12 @@
   function submission(task, roundKey, now, text, images, selfScore) {
     if (task.format === 'auto') throw Error('默认打卡由系统自动记录，无需手动提交');
     validateScore(selfScore);
-    if (task.deletedAt || !task.enabled) throw Error('任务已停用或删除，不能提交');
+    if (task.deletedAt || !task.enabled) throw Error('作业已停用或删除，不能提交');
     if (paused(task, roundKey)) throw Error('本轮已暂停，无需提交');
     const round = history(task, now).find((x) => x.key === roundKey);
-    if (!round) throw Error('该轮次尚未开始或不属于此任务');
+    if (!round) throw Error('该轮次尚未开始或不属于此作业');
     const window = windowFor(task, round);
-    if (now < window.start) throw Error('尚未到任务可完成时间');
+    if (now < window.start) throw Error('尚未到作业可完成时间');
     if (task.kind === 'recurring' && now <= window.end) {
       const d = local(now),
         day = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - OFFSET;
@@ -250,9 +250,9 @@
         task.weekDays?.length &&
         !task.weekDays.includes((d.getUTCDay() + 6) % 7)
       )
-        throw Error('今天不在任务设定的完成星期内');
+        throw Error('今天不在作业设定的完成星期内');
       if (!task.dateOnly && task.startTime && input(now).slice(11) < task.startTime)
-        throw Error('尚未到任务可完成时间');
+        throw Error('尚未到作业可完成时间');
     }
     if (task.format === 'text' && !text.trim()) throw Error('请填写成果文字');
     if (task.format === 'image' && !images.length) throw Error('请至少选择一张图片');
@@ -287,10 +287,10 @@
     return typeof task?.roundNotes?.[key] === 'string' ? task.roundNotes[key] : '';
   }
   function withRoundNote(task, key, text, ms) {
-    if (task.kind !== 'recurring') throw Error('仅周期任务支持本周期备注');
+    if (task.kind !== 'recurring') throw Error('仅周期作业支持本周期备注');
     if (typeof text !== 'string') throw Error('周期备注格式无效');
     if (!history(task, ms).some((p) => p.key === key) && !task._rounds?.[key])
-      throw Error('轮次尚未开始或不属于此任务');
+      throw Error('轮次尚未开始或不属于此作业');
     return { ...task, roundNotes: { ...(task.roundNotes || {}), [key]: text.trim() } };
   }
   function validateScore(score) {

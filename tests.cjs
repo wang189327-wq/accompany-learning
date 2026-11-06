@@ -79,7 +79,7 @@ assert.equal(
 assert.equal(normal.taskName, '每周阅读');
 assert.equal(normal.taskId, 't1');
 new vm.Script(fs.readFileSync(path.join(__dirname, 'app.js'), 'utf8'));
-console.log('通过：北京时间、跨周/月/年、无限周期、补交、逾期、提交校验、任务删除历史与应用语法。');
+console.log('通过：北京时间、跨周/月/年、无限周期、补交、逾期、提交校验、作业删除历史与应用语法。');
 
 const daily = { ...task, rule: 'day' };
 assert.equal(M.period(daily, at('2026-10-07T23:59')).key, '2026-10-07');
@@ -103,7 +103,7 @@ const sample = [
   task,
   { ...task, id: 'math', name: '数学阅读练习', subject: '数学' },
   { ...task, id: 'eng', name: 'English Reading', subject: '英语' },
-  { ...task, id: 'old', name: '旧任务', subject: undefined },
+  { ...task, id: 'old', name: '旧作业', subject: undefined },
 ];
 assert.equal(M.filterHistory(sample, ' 阅读 ', '').length, 2);
 assert.equal(M.filterHistory(sample, '阅读', '数学')[0].id, 'math');
@@ -134,6 +134,8 @@ function renderFixture(testMode) {
     return elements.get(id);
   };
   const browser = vm.createContext({
+    AssignmentGroups: require('./assignment-groups.js'),
+    AssignmentGroupsUI: { create: () => ({ html: () => '', reset() {}, value: () => null }) },
     MyUI: {
       unread() {
         return 0;
@@ -180,18 +182,18 @@ function renderFixture(testMode) {
     browser,
   );
   const home = get('app').innerHTML;
-  assert.ok(home.indexOf('未完成任务') < home.indexOf('已完成任务'));
+  assert.ok(home.indexOf('未完成作业') < home.indexOf('已完成作业'));
   assert.ok(
-    home.slice(home.indexOf('未完成任务'), home.indexOf('已完成任务')).includes('数学阅读练习'),
+    home.slice(home.indexOf('未完成作业'), home.indexOf('已完成作业')).includes('数学阅读练习'),
   );
-  assert.ok(home.slice(home.indexOf('已完成任务')).includes('每周阅读'));
+  assert.ok(home.slice(home.indexOf('已完成作业')).includes('每周阅读'));
   for (const id of ['backup', 'restore', 'testToggle'])
     assert.equal(home.includes('id=\"' + id + '\"'), testMode);
   vm.runInContext("tab='history';searchName='阅读';searchSubject='数学';render();", browser);
   const filtered = get('historyResults').innerHTML || vm.runInContext('historyResults()', browser);
   assert.ok(filtered.includes('数学阅读练习'));
   assert.ok(!filtered.includes('每周阅读'));
-  assert.ok(get('app').innerHTML.includes('历史任务'));
+  assert.ok(get('app').innerHTML.includes('作业档案'));
   // This fixture checks rendered content; live DOM reuse is exercised in qa-sync44.cjs.
   vm.runInContext(
     "StudyUI.state={task:{completion:'all'}};syncMarkup=(target,html)=>{target.innerHTML=html;};selected='t1';role='student';renderDetail();",

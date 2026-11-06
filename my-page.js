@@ -298,7 +298,7 @@ const MyUI = (() => {
             TaskModel.display(m.created) +
             '</p><div class="actions"><button data-message="' +
             esc(m.id) +
-            '">查看任务</button>' +
+            '">查看作业</button>' +
             (!m.read ? '<button data-read-message="' + esc(m.id) + '">标为已读</button>' : '') +
             '</div></article>',
         )
@@ -588,7 +588,7 @@ const MyUI = (() => {
           const msg = messages.find((m) => m.id === el.dataset.message),
             task = tasks.find((t) => t.id === msg?.taskId);
           if (!task || !canViewTask(task)) {
-            toast('此任务已删除，学生端无法查看');
+            toast('此作业已删除，学生端无法查看');
             return;
           }
           document.getElementById('messagesDialog').close();

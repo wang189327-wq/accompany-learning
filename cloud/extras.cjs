@@ -51,7 +51,7 @@ function createExtras(store, objects, clock, M, fail) {
         targetRole: 'student',
         kind: old ? 'taskUpdated' : 'taskPublished',
         taskId: task.id,
-        title: old ? '老师修改了任务' : '老师发布了任务',
+        title: old ? '老师修改了作业' : '老师发布了作业',
         body: task.name + ' · ' + task.semester,
         created: clock(),
       },
@@ -81,7 +81,7 @@ function createExtras(store, objects, clock, M, fail) {
           if (err.status !== 409) throw err;
           current = await store.getTask(current.id);
           if (!current) break;
-          if (attempt === 3) fail(409, '任务正在更新，请刷新重试');
+          if (attempt === 3) fail(409, '作业正在更新，请刷新重试');
         }
       }
       tasks[index] = current;

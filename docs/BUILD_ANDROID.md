@@ -7,7 +7,7 @@
 3. 执行`powershell -NoProfile -ExecutionPolicy Bypass -File android/setup-tools.ps1`。脚本从Google和Microsoft官方地址下载并校验工具，放在被忽略的`android/tools/`，不修改系统PATH。下载失败时按具体错误检查网络和官方下载地址。
 4. 执行`powershell -NoProfile -ExecutionPolicy Bypass -File android/build-apk.ps1`。
 
-输出为`android/release/伴学记录-v3.1.apk`及SHA256.txt。构建时会先生成云端网页和PublicConfig.java，后者包含公开的地址配置，不包含访问码。
+输出为`android/release/伴学记录-v4.0.apk`及SHA256.txt。构建时会先生成云端网页和PublicConfig.java，后者包含公开的地址配置，不包含访问码。
 
 ## 签名
 

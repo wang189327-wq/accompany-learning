@@ -118,7 +118,7 @@ test('老师评分可改，旧版本评分更新被拒绝，自评和内容保�
   assert.equal(r.gradeRevision, 2);
   assert.equal(r.text, '作业内容');
 });
-test('周三发布任务，下周一开启新轮，旧轮补交紫色', async () => {
+test('周三发布作业，下周一开启新轮，旧轮补交紫色', async () => {
   const { api, setTime } = setup();
   const t = await create(api, { rule: 'week' }),
     u = await upload(api, t);
@@ -144,7 +144,7 @@ test('跨过午夜才真正保存的作业按补交处理', async () => {
   assert.equal(r.late, true);
   assert.equal(r.completed, at('2026-10-08T00:00'));
 });
-test('停用或删除任务拒绝提交；删除后保留图片并可评分', async () => {
+test('停用或删除作业拒绝提交；删除后保留图片并可评分', async () => {
   const { api } = setup();
   let t = await create(api, { format: 'image' }),
     u = await upload(api, t, 'fake-image-data', 'image');
@@ -171,7 +171,7 @@ test('停用或删除任务拒绝提交；删除后保留图片并可评分', as
     (e) => e.status === 409,
   );
 });
-test('长文字分段保存；任务表不会存整份长文字', async () => {
+test('长文字分段保存；作业表不会存整份长文字', async () => {
   const { api, memory } = setup();
   const t = await create(api);
   const content = '练习'.repeat(800000);
@@ -200,7 +200,7 @@ test('记录表短暂失败后，从提交凭据恢复成果，不丢失完成�
   assert.equal(retry.text, '作业内容');
   assert.equal((await api.snapshot()).records.length, 1);
 });
-test('教师修改已有周期任务的周期和形式，原作业内容和名称独立保留', async () => {
+test('教师修改已有周期作业的周期和形式，原作业内容和名称独立保留', async () => {
   const { api } = setup();
   const t = await create(api),
     u = await upload(api, t);
@@ -212,7 +212,7 @@ test('教师修改已有周期任务的周期和形式，原作业内容和名�
         ...fresh,
         rule: 'week',
         format: 'image',
-        name: '新任务名',
+        name: '新作业名',
         weekDays: [6],
         startTime: '09:30',
         endTime: '18:45',
@@ -222,13 +222,13 @@ test('教师修改已有周期任务的周期和形式，原作业内容和名�
     'teacher',
   );
   const s = await api.snapshot();
-  assert.equal(s.tasks[0].name, '新任务名');
+  assert.equal(s.tasks[0].name, '新作业名');
   assert.equal(s.tasks[0].format, 'image');
   assert.equal(s.records[0].taskName, '每天作业');
   assert.equal(s.records[0].format, 'text');
   assert.equal(s.records[0].text, '作业内容');
 });
-test('部署连接检查验证两张表和文件存储，自动备份保留任务与双方分数', async () => {
+test('部署连接检查验证两张表和文件存储，自动备份保留作业与双方分数', async () => {
   const { api, memory } = setup();
   assert.equal((await api.check()).ok, true);
   const t = await create(api),
@@ -270,7 +270,7 @@ test('HTTP接口鉴权、非法请求、静态界面和完整提交评分流程'
     body: JSON.stringify({
       task: {
         id: 'test-task',
-        name: '联网任务',
+        name: '联网作业',
         subject: '数学',
         semester: '七年级上学期',
         kind: 'once',

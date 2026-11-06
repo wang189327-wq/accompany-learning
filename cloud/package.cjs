@@ -76,6 +76,8 @@ async function packageAll() {
   const entries = [];
   for (const name of [
     'task-service.cjs',
+    'assignment-groups.cjs',
+    'assignment-groups.js',
     'ai-review.cjs',
     'review-batches.cjs',
     'extras.cjs',

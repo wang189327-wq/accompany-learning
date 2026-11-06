@@ -1,6 +1,6 @@
 # 阿里云部署教程
 
-本教程对应公开版3.1、接口build54。请使用自己的账号、域名、访问码与存储资源。示例域名不能直接连接，代码仓库不提供公共共享后台。
+本教程对应公开版4.0、接口build55。请使用自己的账号、域名、访问码与存储资源。示例域名不能直接连接，代码仓库不提供公共共享后台。
 
 ## 1. 准备部署包
 
@@ -102,10 +102,10 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 浏览器访问`https://自己的接口地址/health`，应有：
 
 ```json
-{"ok":true,"service":"伴学记录","version":"1.6.0","build":54,"features":{"snapshotOptimized":true}}
+{"ok":true,"service":"伴学记录","version":"1.6.0","build":55,"features":{"snapshotOptimized":true}}
 ```
 
-实际结果还有其他features和时间字段。`version`是后端协议号，与安卓显示3.1不同。健康接口不读写存储，不能单凭ok证明存储权限正常；在App“连接并保存”时会进一步校验两张表和OSS。
+实际结果还有其他features和时间字段。`version`是后端协议号，与安卓显示4.0不同。健康接口不读写存储，不能单凭ok证明存储权限正常；在App“连接并保存”时会进一步校验两张表和OSS。
 
 默认FC域名可能对网页和下载响应施加平台限制。网页可按[Netlify教程](DEPLOY_WEB.md)独立托管；APK使用自己的静态更新站点，不用FC默认域名分发。正式域名、备案及联网App合规事项按自己的部署地点和使用方式核实。
 

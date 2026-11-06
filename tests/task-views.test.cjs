@@ -6,8 +6,16 @@ const vm = require('node:vm');
 require('../model.js');
 const M = global.TaskModel;
 const TaskViews = require('../task-views.js');
+// 4.0 intentionally renames the UI and hides encoded rounds; all other output stays equivalent.
+function v4Copy(html) {
+  return html
+    .replaceAll('任务', '作业')
+    .replaceAll('历史作业', '作业档案')
+    .replace(/<p class="muted currentRound">[\s\S]*?<\/p>/g, '')
+    .replace(/(<p class="muted">)(?:单次|\d{4}-(?:W\d{2}|\d{2}(?:-\d{2})?)) · /g, '$1');
+}
 
-test('拆分后的任务卡片、历史及四种日期视图与原版输出一致，并读取最新角色和筛选', () => {
+test('拆分后的作业卡片、历史及四种日期视图与原版输出一致，并读取最新角色和筛选', () => {
   const time = M.parse('2026-11-05T12:00');
   const context = {
     M,
@@ -44,7 +52,7 @@ test('拆分后的任务卡片、历史及四种日期视图与原版输出一�
   };
   context.tasks = Array.from({ length: 12 }, (_, index) => ({
     id: 'view-' + index,
-    name: '合成任务<' + index + '>',
+    name: '合成作业<' + index + '>',
     subject: index % 2 ? '数学' : '语文',
     semester: index % 3 ? '七年级上学期' : '',
     kind: index % 4 ? 'recurring' : 'once',
@@ -57,7 +65,7 @@ test('拆分后的任务卡片、历史及四种日期视图与原版输出一�
     weekDays: [0, 6],
     createdBy: index % 2 ? 'teacher' : 'student',
     requiresTeaching: index % 3 === 0,
-    note: '任务备注<' + index + '>',
+    note: '作业备注<' + index + '>',
     roundNotes: {},
     pausedRounds: [],
     deletedAt: index === 11 ? time : null,
@@ -90,17 +98,17 @@ test('拆分后的任务卡片、历史及四种日期视图与原版输出一�
       for (const date of ['2026-11-05', '2026-12-31', '2027-01-01']) {
         context.calendarDate = date;
         for (const task of context.tasks) {
-          assert.equal(views.taskCard(task), baseline.taskCard(task));
+          assert.equal(views.taskCard(task), v4Copy(baseline.taskCard(task)));
           cases++;
         }
         assert.equal(
           views.calendarPage(context.tasks, '日程正文'),
-          baseline.calendarPage(context.tasks, '日程正文'),
+          v4Copy(baseline.calendarPage(context.tasks, '日程正文')),
         );
-        for (const search of ['', '合成任务', '不存在']) {
+        for (const search of ['', '合成作业', '不存在']) {
           context.searchName = search;
           context.searchSemesters = search ? ['七年级上学期'] : [];
-          assert.equal(views.historyResults(), baseline.historyResults());
+          assert.equal(views.historyResults(), v4Copy(baseline.historyResults()));
           cases++;
         }
       }

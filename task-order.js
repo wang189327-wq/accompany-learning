@@ -42,11 +42,11 @@ const TaskOrdering = (() => {
     suppressUntil = Date.now() + 500;
     const card = document.querySelector('[data-order-id="' + id + '"]');
     card?.focus();
-    toast('拖动同一栏内的任务，点击确认保存');
+    toast('拖动同一栏内的作业，点击确认保存');
   }
   function controls() {
     return draft
-      ? '<div class="sortBar" role="status"><strong>调整任务顺序</strong><div class="actions"><button id="confirmTaskOrder" class="primary" ' +
+      ? '<div class="sortBar" role="status"><strong>调整作业顺序</strong><div class="actions"><button id="confirmTaskOrder" class="primary" ' +
           (saving ? 'disabled' : '') +
           '>确认</button><button id="cancelTaskOrder" ' +
           (saving ? 'disabled' : '') +
@@ -65,16 +65,16 @@ const TaskOrdering = (() => {
   }
   function card(id) {
     return eligible()
-      ? ' data-order-id="' + id + '" ' + (draft ? 'tabindex="0" aria-label="可拖动排序的任务"' : '')
+      ? ' data-order-id="' + id + '" ' + (draft ? 'tabindex="0" aria-label="可拖动排序的作业"' : '')
       : '';
   }
   function actions(id) {
     return draft
       ? '<div class="sortHandles"><button data-order-move="' +
           id +
-          '" data-direction="-1" aria-label="上移任务">↑</button><button data-order-move="' +
+          '" data-direction="-1" aria-label="上移作业">↑</button><button data-order-move="' +
           id +
-          '" data-direction="1" aria-label="下移任务">↓</button></div>'
+          '" data-direction="1" aria-label="下移作业">↓</button></div>'
       : '';
   }
   function cancel() {
@@ -105,7 +105,7 @@ const TaskOrdering = (() => {
       } catch {}
       draft = null;
       render();
-      toast('任务顺序已保存');
+      toast('作业顺序已保存');
     } catch (e) {
       toast(e.message);
       if (e.status === 409) {

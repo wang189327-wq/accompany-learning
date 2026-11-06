@@ -19,7 +19,7 @@ async function task(f, extra = {}) {
     {
       task: {
         id: 't',
-        name: '测试任务',
+        name: '测试作业',
         subject: '数学',
         semester: '七年级上学期',
         kind: 'recurring',
@@ -97,7 +97,7 @@ test('单次仍只能提交一次，周期首次和重复提交并发均不会�
   const current = (await f.api.snapshot()).tasks[0];
   await assert.rejects(submit(f, current, 'once2'), (e) => e.status === 409);
 });
-test('学生可通过专用接口修改老师任务星期，不能修改老师任务其他字段，旧提交保留', async () => {
+test('学生可通过专用接口修改老师作业星期，不能修改老师作业其他字段，旧提交保留', async () => {
   const f = fixture(),
     t = await task(f);
   await submit(f, t, 'studentwork');
@@ -117,7 +117,7 @@ test('学生可通过专用接口修改老师任务星期，不能修改老师�
     (e) => e.status === 400,
   );
 });
-test('自动打卡按日期幂等，多选星期各留一条，暂停停用不补生成，日月任务按规则生成', async () => {
+test('自动打卡按日期幂等，多选星期各留一条，暂停停用不补生成，日月作业按规则生成', async () => {
   const f = fixture();
   let t = await task(f, { format: 'auto', weekDays: [0, 2] });
   let snap = await f.api.snapshot();

@@ -7,7 +7,7 @@ const now = () => Date.UTC(2026, 10, 2, 4),
     const mem = createMemory();
     return { mem, api: createService(mem.store, mem.objects, now) };
   };
-test('文件任务多附件上传下载、重试幂等、补交独立、删除后保留、禁止空提交和AI误读', async () => {
+test('文件作业多附件上传下载、重试幂等、补交独立、删除后保留、禁止空提交和AI误读', async () => {
   const { api } = fixture();
   let t = await api.saveTask(
     { task: { id: 'files', name: '文件作业', format: 'file' } },
@@ -135,7 +135,7 @@ test('老师学生都能仅名称发布，默认每天文字启用，无伪造�
     assert.equal(s.features.optionalTaskFields, true);
   }
 });
-test('授课信息可编辑，旧客户端不传时保留，老任务读取默认否且不批量重写', async () => {
+test('授课信息可编辑，旧客户端不传时保留，老作业读取默认否且不批量重写', async () => {
   const { mem, api } = fixture();
   let t = await api.saveTask(
     { task: { id: 'course', name: '课程', requiresTeaching: true } },
@@ -163,7 +163,7 @@ test('空单次日期自动补齐，星期可留空；非法非空字段仍拒�
   const t = await api.saveTask({ task: { id: 'once', name: '单次', kind: 'once' } }, 'teacher');
   assert.ok(Number.isFinite(t.deadline) && t.deadline > now());
   const w = await api.saveTask(
-    { task: { id: 'week', name: '周任务', rule: 'week', weekDays: null } },
+    { task: { id: 'week', name: '周作业', rule: 'week', weekDays: null } },
     'teacher',
   );
   assert.equal(w.rule, 'week');
@@ -178,7 +178,7 @@ test('空单次日期自动补齐，星期可留空；非法非空字段仍拒�
     await assert.rejects(api.saveTask({ task: { id: 'bad', name: '校验', ...bad } }, 'teacher'));
   await assert.rejects(api.saveTask({ task: { id: 'empty', name: '  ' } }, 'teacher'));
 });
-test('课程停用恢复保留原作业和字段，学生不能修改老师的任务', async () => {
+test('课程停用恢复保留原作业和字段，学生不能修改老师的作业', async () => {
   const { api } = fixture();
   let t = await api.saveTask(
     { task: { id: 't', name: '课程', requiresTeaching: true } },

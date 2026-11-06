@@ -2531,6 +2531,78 @@ main.myPage {
 #pdfControls {
   flex-shrink: 0;
 }
+.publishActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+.taskStats.publishWrapped .publishActions {
+  margin-left: 0;
+  justify-content: flex-start;
+}
+.historyNames {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 100%;
+  min-width: 0;
+  gap: 12px;
+}
+.historyNames > label {
+  margin: 0;
+}
+.groupPicker {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  margin-bottom: 12px;
+}
+.groupPicker > label {
+  display: block;
+  margin-bottom: 6px;
+}
+.groupPicker > input {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+}
+.groupPicker small {
+  display: block;
+  overflow-wrap: anywhere;
+  margin-top: 4px;
+}
+.groupCandidates {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% - 1.4em);
+  width: 100%;
+  max-height: 16rem;
+  overflow: auto;
+  background: white;
+  border: 1px solid #333;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px #0002;
+}
+.groupCandidates[hidden] {
+  display: none;
+}
+.groupCandidates > button {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+  color: #222;
+  background: white;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.groupCandidates > button.candidateActive,
+.groupCandidates > button:hover,
+.groupCandidates > button:focus-visible {
+  background: var(--c9-soft, #e3eddf);
+}
 /* 3.0 phone history: a long semester selection wraps without squeezing other controls. */
 @media (max-width: 600px) {
   [data-page='history'] .historyFilters {

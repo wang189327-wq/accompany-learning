@@ -72,7 +72,7 @@ test('云端界面分段上传、网络重试复用上传成果、访问码不�
   assert.equal(record.selfScore, 8);
   assert.equal(record.completed, 1000);
 });
-test('云端生成界面只使用网络读写并保留评分和任务分栏', () => {
+test('云端生成界面只使用网络读写并保留评分和作业分栏', () => {
   const source = fs.readFileSync(path.join(__dirname, '../public/app.js'), 'utf8');
   new vm.Script(source);
   new vm.Script(fs.readFileSync(path.join(__dirname, '../public/cloud-client.js'), 'utf8'));
@@ -80,8 +80,8 @@ test('云端生成界面只使用网络读写并保留评分和任务分栏', ()
   assert.ok(source.includes('Cloud.snapshot()'));
   assert.ok(source.includes('Cloud.submit(record'));
   assert.ok(!source.includes('indexedDB.open('));
-  assert.ok(/section\(\s*['"]未完成任务['"]/.test(source));
-  assert.ok(/section\(\s*['"]已完成任务['"]/.test(source));
+  assert.ok(/section\(\s*['"]未完成作业['"]/.test(source));
+  assert.ok(/section\(\s*['"]已完成作业['"]/.test(source));
   assert.ok(source.includes('作业自评分：'));
   assert.ok(source.includes('老师评分：'));
   assert.ok(source.includes('提交作业'));

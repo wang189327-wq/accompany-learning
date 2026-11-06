@@ -43,7 +43,7 @@ const TaskViews = (() => {
       if (taskView === 'agenda')
         return (
           TaskOrdering.controls() +
-          '<div class="pageHeading"><h2>任务清单</h2>' +
+          '<div class="pageHeading"><h2>作业清单</h2>' +
           modes +
           '</div>' +
           agenda
@@ -142,8 +142,6 @@ const TaskViews = (() => {
             '</span><h3>' +
             escapeHTML(r.taskName) +
             '</h3><p class="muted">' +
-            escapeHTML(r.round) +
-            ' · ' +
             M.display(r.completed) +
             '</p>' +
             scoreHTML(r) +
@@ -160,22 +158,22 @@ const TaskViews = (() => {
         pending.length +
         ' 个</span></div><div class="grid">' +
         (pending.map((t) => taskCard(t, start)).join('') ||
-          '<p class="empty">当天没有待办任务</p>') +
+          '<p class="empty">当天没有待办作业</p>') +
         '</div></section><section class="taskSection"><div class="sectionTitle"><h2>当天完成</h2><span>' +
         done.length +
         ' 次</span></div><div class="grid">' +
         (completion || '<p class="empty">当天没有打卡记录</p>') +
         '</div></section></div>';
       return (
-        '<div class="pageHeading"><h2>任务清单</h2>' +
+        '<div class="pageHeading"><h2>作业清单</h2>' +
         modes +
         '</div>' +
         (taskView === 'week'
-          ? '<details class="chartFilters"><summary>本周任务 · ' +
+          ? '<details class="chartFilters"><summary>本周作业 · ' +
             weekly.length +
             ' 个</summary><div class="grid">' +
             (weekly.map((t) => taskCard(t, weekStart)).join('') ||
-              '<p class="empty">暂无周任务</p>') +
+              '<p class="empty">暂无周作业</p>') +
             '</div></details>'
           : '') +
         (taskView === 'month' && month === dayLabel(now()).slice(0, 7)
@@ -232,12 +230,11 @@ const TaskViews = (() => {
         `${escapeHTML(t.semester === undefined ? '七年级上学期' : t.semester || '学期未设置')}</span>`,
         `${t.requiresTeaching ? '<span class="badge blue">需要授课</span>' : ''}${t.createdBy === 'student' ? '<span class="badge blue">学生发布</span>' : ''}${t.deletedAt ? '<span class="badge red">已删除</span>' : ''}<h3>`,
         `${escapeHTML(t.name)}</h3>`,
+        `${t.assignmentGroupId ? '<p class="muted">任务：' + escapeHTML(getContext().assignmentGroups?.find((group) => group.id === t.assignmentGroupId)?.name || '未找到关联任务') + '</p>' : ''}`,
         `<p class="muted">`,
         `${escapeHTML(t.subject || '学科未设置')} · ${kindText(t)} · ${formatText(t.format)}</p>`,
-        `<p class="muted currentRound">`,
-        `${t.kind === 'once' ? '截止：' + dateText(t.deadline) : '当前轮次：' + p.key}</p>`,
         `<p class="muted">完成时间：${M.scheduleLabel(t, p)}${t.rule === 'week' && t.weekDays?.length ? ' · ' + t.weekDays.map((d) => '周' + ['一', '二', '三', '四', '五', '六', '日'][d]).join('、') : ''}</p>`,
-        `${t.note ? '<p class="muted taskNote">任务备注：' + escapeHTML(t.note) + '</p>' : ''}${t.kind === 'recurring' && M.roundNote(t, p.key) ? '<p class="muted periodNote">' + periodNoteName(t) + '：' + escapeHTML(M.roundNote(t, p.key)) + '</p>' : ''}${scoreHTML(recordFor(t, p))}<div class="actions">`,
+        `${t.note ? '<p class="muted taskNote">作业备注：' + escapeHTML(t.note) + '</p>' : ''}${t.kind === 'recurring' && M.roundNote(t, p.key) ? '<p class="muted periodNote">' + periodNoteName(t) + '：' + escapeHTML(M.roundNote(t, p.key)) + '</p>' : ''}${scoreHTML(recordFor(t, p))}<div class="actions">`,
         `${role === 'teacher' && p.key === M.period(t, now()).key && t.kind === 'recurring' && t.enabled && !t.deletedAt && !recordFor(t, p) ? `<button data-pause-round="${escapeHTML(t.id)}">${M.paused(t, p) ? '恢复' : '暂停'}${{ day: '本日', week: '本周', month: '本月' }[t.rule]}</button>` : ''}${t.kind === 'recurring' && t.rule === 'week' && !t.deletedAt ? '<button data-weekdays="' + escapeHTML(t.id) + '">完成星期</button>' : ''}<button data-detail="${escapeHTML(t.id)}">查看详情 / 历史</button>`,
         `${M.canManage(t, role) && !t.deletedAt ? `<button data-edit="${escapeHTML(t.id)}">修改</button><button data-toggle="${escapeHTML(t.id)}">${t.enabled ? '停用' : '恢复'}</button><button class="danger" data-delete="${escapeHTML(t.id)}">删除</button>` : ''}</div>`,
         `</article>`,
@@ -245,15 +242,30 @@ const TaskViews = (() => {
     }
 
     function historyResults() {
-      const { M, tasks, canViewTask, searchName, searchSubject, searchSemesters, role } =
-        getContext();
+      const {
+        M,
+        tasks,
+        canViewTask,
+        searchName,
+        searchSubject,
+        searchSemesters,
+        role,
+        searchAssignmentGroup = '',
+      } = getContext();
 
       const list = M.filterHistory(tasks.filter(canViewTask), searchName, searchSubject)
+        .filter(
+          (t) =>
+            !searchAssignmentGroup ||
+            (searchAssignmentGroup === '__unlinked__'
+              ? !t.assignmentGroupId
+              : t.assignmentGroupId === searchAssignmentGroup),
+        )
         .filter(
           (t) => !searchSemesters.length || searchSemesters.includes(t.semester ?? '七年级上学期'),
         )
         .sort((a, b) => b.created - a.created);
-      return `<p class="muted">共 ${list.length} 个任务 · ${role === 'teacher' ? '包含停用和已删除任务' : '包含停用任务'}</p><div class="grid">${list.map((t) => taskCard(t)).join('') || '<div class="empty">没有符合条件的历史任务</div>'}</div>`;
+      return `<p class="muted">共 ${list.length} 个作业 · ${role === 'teacher' ? '包含停用和已删除作业' : '包含停用作业'}</p><div class="grid">${list.map((t) => taskCard(t)).join('') || '<div class="empty">没有符合条件的作业档案</div>'}</div>`;
     }
     return { calendarPage, taskCard, historyResults };
   }

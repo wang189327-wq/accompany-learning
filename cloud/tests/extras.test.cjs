@@ -104,7 +104,7 @@ test('头像昵称分角色保存，共同目标和可编辑合并表格同步�
   assert.equal(saved.my.preferences.length, 3);
   assert.equal(saved.my.metadata.length, 3);
 });
-test('任务备注和提醒仅老师可改，发布和修改消息随任务条件更新提交；失败无新消息', async () => {
+test('作业备注和提醒仅老师可改，发布和修改消息随作业条件更新提交；失败无新消息', async () => {
   const s = setup();
   let t = await task(s, { note: '检查计算步骤', reminder: { amount: 2, unit: 'hours' } });
   let snap = await s.api.snapshot();

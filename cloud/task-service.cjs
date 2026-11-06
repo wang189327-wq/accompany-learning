@@ -5,6 +5,7 @@ function createTaskService({
   clock,
   M,
   extras,
+  assignmentGroups,
   taskGet,
   visibleTask,
   libraryRole,
@@ -18,8 +19,8 @@ function createTaskService({
       libraryRole(who);
       const old = await taskGet(body.taskId);
       if (old.deletedAt || old.kind !== 'recurring' || old.rule !== 'week')
-        fail(400, '只有每周周期任务可修改完成星期');
-      if (old.revision !== body.expected) fail(409, '任务已变更，请重新打开');
+        fail(400, '只有每周周期作业可修改完成星期');
+      if (old.revision !== body.expected) fail(409, '作业已变更，请重新打开');
       const next = {
         ...old,
         weekDays: body.weekDays,
@@ -49,7 +50,7 @@ function createTaskService({
       )
         fail(400, '排序内容无效');
       const ids = new Set((await store.listTasks()).filter((t) => !t.deletedAt).map((t) => t.id));
-      if (body.ids.some((id) => !ids.has(id))) fail(409, '任务列表已变更，请取消并重新排序');
+      if (body.ids.some((id) => !ids.has(id))) fail(409, '作业列表已变更，请取消并重新排序');
       const old = await store.getRecord('__c9_prefs__', who);
       if (old ? old.gradeRevision !== body.expected : body.expected != null)
         fail(409, '同一角色的排序已在其他设备更新，请取消并重试');
@@ -65,13 +66,13 @@ function createTaskService({
     async saveTask(body, who) {
       libraryRole(who);
       const { task: input, expected } = body;
-      if (!input || typeof input !== 'object') fail(400, '任务信息无效');
+      if (!input || typeof input !== 'object') fail(400, '作业信息无效');
       id(input.id);
       let old = await store.getTask(input.id);
-      if (old && !M.canManage(old, who)) fail(403, '只能修改或删除自己发布的任务');
-      if (old?.deletedAt) fail(409, '任务已删除');
-      if (old && old.revision !== expected) fail(409, '任务已变更，请刷新后重试');
-      if (!old && expected != null) fail(409, '任务不存在，请刷新');
+      if (old && !M.canManage(old, who)) fail(403, '只能修改或删除自己发布的作业');
+      if (old?.deletedAt) fail(409, '作业已删除');
+      if (old && old.revision !== expected) fail(409, '作业已变更，请刷新后重试');
+      if (!old && expected != null) fail(409, '作业不存在，请刷新');
       if (input.requiresTeaching !== undefined && typeof input.requiresTeaching !== 'boolean')
         fail(400, '授课选项无效');
       input.subject = input.subject ?? old?.subject ?? '';
@@ -93,6 +94,10 @@ function createTaskService({
         _events: old?._events || [],
         id: input.id,
         name: typeof input.name === 'string' ? input.name.trim() : '',
+        assignmentGroupId: await assignmentGroups.association(
+          input.assignmentGroupId,
+          old?.assignmentGroupId,
+        ),
         requiresTeaching: input.requiresTeaching,
         subject: input.subject,
         semester: input.semester ?? old?.semester,
@@ -137,7 +142,7 @@ function createTaskService({
         fail(409, '已有作业，不能修改类型、周期或提交形式');
       if (old && (old.kind !== next.kind || old.rule !== next.rule)) next.created = clock();
       if (input.deletedAt) {
-        if (!old) fail(400, '新任务不能直接删除');
+        if (!old) fail(400, '新作业不能直接删除');
         next.deletedAt = clock();
       }
       if (input.roundNote) {
@@ -159,7 +164,7 @@ function createTaskService({
       role(who, 'teacher');
       round(body.round);
       const t = await taskGet(body.taskId);
-      if (t.revision !== body.expected) fail(409, '任务已在另一设备更新，请关闭并重新打开备注');
+      if (t.revision !== body.expected) fail(409, '作业已在另一设备更新，请关闭并重新打开备注');
       let next;
       try {
         next = M.withRoundNote(t, body.round, body.text, clock());
@@ -176,11 +181,11 @@ function createTaskService({
       role(who, 'teacher');
       const t = await taskGet(body.taskId);
       if (t.deletedAt || !t.enabled || t.kind !== 'recurring')
-        fail(409, '仅启用中的周期任务可以暂停本轮');
+        fail(409, '仅启用中的周期作业可以暂停本轮');
       const current = M.period(t, clock());
       if (body.round !== current.key) fail(409, '轮次已变化，请刷新');
       if (typeof body.paused !== 'boolean') fail(400, '暂停设置无效');
-      if (t.revision !== body.expected) fail(409, '任务已变更，请刷新');
+      if (t.revision !== body.expected) fail(409, '作业已变更，请刷新');
       if (t._rounds?.[current.key]) fail(409, '本轮已完成，无需暂停');
       const values = new Set(t.pausedRounds || []);
       if (body.paused) values.add(current.key);
