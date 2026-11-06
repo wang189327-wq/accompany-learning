@@ -60,7 +60,7 @@ test('关联可空；旧客户端缺省保留、显式null解除；作业元数�
 
 test('必填校验、身份和重复ID保护；同时创建不丢任务', async () => {
   const { api } = fixture();
-  for (const field of ['name', 'subject', 'semester']) {
+  for (const field of ['name']) {
     await assert.rejects(
       api.publishAssignmentGroup({ group: { ...group(), [field]: '' } }, 'teacher'),
     );
@@ -72,4 +72,40 @@ test('必填校验、身份和重复ID保护；同时创建不丢任务', async 
     ['a', 'b', 'c'].map((id) => api.publishAssignmentGroup({ group: group(id) }, 'student')),
   );
   assert.equal((await api.snapshot()).assignmentGroups.length, 4);
+});
+
+test('任务仅名称必填：学科和学期可分别或同时留空，选填值仍校验', async () => {
+  const { api } = fixture();
+  const named = await api.publishAssignmentGroup(
+    { group: { id: 'name-only', name: '  数学模型  ' } },
+    'teacher',
+  );
+  assert.equal(named.name, '数学模型');
+  assert.equal(named.subject, '');
+  assert.equal(named.semester, '');
+  const withSubject = await api.publishAssignmentGroup(
+    { group: { id: 'subject-only', name: '有学科', subject: '数学' } },
+    'student',
+  );
+  assert.equal(withSubject.subject, '数学');
+  assert.equal(withSubject.semester, '');
+  const withSemester = await api.publishAssignmentGroup(
+    { group: { id: 'semester-only', name: '有学期', semester: '七年级上学期' } },
+    'teacher',
+  );
+  assert.equal(withSemester.subject, '');
+  assert.equal(withSemester.semester, '七年级上学期');
+  await assert.rejects(
+    api.publishAssignmentGroup(
+      { group: { id: 'invalid-subject', name: '异常', subject: '不存在' } },
+      'teacher',
+    ),
+  );
+  await assert.rejects(
+    api.publishAssignmentGroup(
+      { group: { id: 'invalid-semester', name: '异常', semester: 0 } },
+      'student',
+    ),
+  );
+  assert.equal((await api.snapshot()).features.optionalGroupFields, true);
 });

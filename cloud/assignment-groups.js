@@ -4,13 +4,15 @@
   function validate(group, subjects, semesters) {
     if (!group || !ID.test(group.id || '')) throw Error('任务编号无效');
     if (typeof group.name !== 'string' || !group.name.trim()) throw Error('请输入任务名称');
-    if (!subjects.includes(group.subject)) throw Error('请选择任务所属学科');
-    if (!semesters.includes(group.semester)) throw Error('请选择任务所属学期');
+    const subject = group.subject ?? '',
+      semester = group.semester ?? '';
+    if (subject !== '' && !subjects.includes(subject)) throw Error('请选择有效的任务所属学科');
+    if (semester !== '' && !semesters.includes(semester)) throw Error('请选择有效的任务所属学期');
     return {
       id: group.id,
       name: group.name.trim(),
-      subject: group.subject,
-      semester: group.semester,
+      subject,
+      semester,
     };
   }
   function filter(groups, query = '') {

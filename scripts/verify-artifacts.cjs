@@ -81,7 +81,7 @@ async function scan(zip, label) {
     name: '伴学记录',
     version: '4.0',
     versionCode: 58,
-    cloudBuild: 55,
+    cloudBuild: 56,
     apk: { bytes: apkBytes.length, sha256: hash(apkBytes) },
     checks,
     packages,

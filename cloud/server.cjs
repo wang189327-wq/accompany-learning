@@ -63,9 +63,10 @@ function createServer(options = {}) {
           ok: true,
           service: '伴学记录',
           version: '1.6.0',
-          build: 55,
+          build: 56,
           features: {
             assignmentGroups: true,
+            optionalGroupFields: true,
             snapshotOptimized: true,
             folderDelete: true,
             historyCleanup: true,

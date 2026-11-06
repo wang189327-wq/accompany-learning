@@ -110,6 +110,7 @@ test('普通全量/增量同步各仅一次作业及资料读取，原版与新�
     const expected = await previous(old.store, old.objects, () => base).snapshot(since);
     expected.assignmentGroups = [];
     expected.features.assignmentGroups = true;
+    expected.features.optionalGroupFields = true;
     let lists = 0,
       library = 0,
       active = 0,

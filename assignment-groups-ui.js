@@ -30,7 +30,7 @@ const AssignmentGroupsUI = (() => {
         ...(allowAll ? [{ id: '__unlinked__', label: '未关联任务' }] : []),
         ...AssignmentGroups.filter(context().groups, s.query).map((group) => ({
           id: group.id,
-          label: group.name + ' · ' + group.subject + ' · ' + group.semester,
+          label: [group.name, group.subject, group.semester].filter(Boolean).join(' · '),
         })),
       ];
       s.choices = choices;
@@ -170,11 +170,11 @@ const AssignmentGroupsUI = (() => {
     });
     document.body.insertAdjacentHTML(
       'beforeend',
-      '<dialog id="assignmentGroupDialog"><div class="dialogHead"><h3>发布任务</h3><button data-close="assignmentGroupDialog">关闭</button></div><form id="assignmentGroupForm"><label>任务名称<input id="assignmentGroupName" required></label><label>所属学科<select id="assignmentGroupSubject" required><option value="">请选择学科</option>' +
+      '<dialog id="assignmentGroupDialog"><div class="dialogHead"><h3>发布任务</h3><button data-close="assignmentGroupDialog">关闭</button></div><form id="assignmentGroupForm"><label>任务名称<input id="assignmentGroupName" required></label><label>所属学科（选填）<select id="assignmentGroupSubject"><option value="">不设置学科</option>' +
         context()
           .M.SUBJECTS.map((value) => '<option>' + value + '</option>')
           .join('') +
-        '</select></label><label>所属学期<select id="assignmentGroupSemester" required><option value="">请选择学期</option>' +
+        '</select></label><label>所属学期（选填）<select id="assignmentGroupSemester"><option value="">不设置学期</option>' +
         context()
           .M.SEMESTERS.map((value) => '<option>' + value + '</option>')
           .join('') +

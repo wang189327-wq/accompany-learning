@@ -33,36 +33,36 @@
 
 除`/health`与静态网页外，API需要`Authorization: Bearer <自己的访问码>`；角色相关接口带`X-C9-Role: teacher`或`student`。电脑worker的三个API使用独立的电脑专用码。
 
-| 方法与路径                                | 用途                                                                             |
-| ----------------------------------------- | -------------------------------------------------------------------------------- |
-| GET `/health`                             | 程序版本/特性，不能代替存储检查                                                  |
-| GET `/api/check`                          | 表格读取及OSS小文件读写连接检查                                                  |
-| GET `/api/snapshot?since=...`             | 全量或增量任务、记录、资料、设置与消息                                           |
-| GET `/api/widget`                         | 安卓组件用的简化快照                                                             |
-| POST `/api/assignment-groups`             | 双方发布新任务，必填名称、学科和学期；请求体`{group:{id,name,subject,semester}}` |
-| POST `/api/tasks`                         | 发布/修改/启停/软删除任务，含revision条件保护                                    |
-| POST `/api/tasks/weekdays`                | 双方修改每周完成星期的专用接口                                                   |
-| POST `/api/tasks/round-note`              | 老师修改某轮备注                                                                 |
-| POST `/api/tasks/pause`                   | 老师暂停/恢复当前轮次                                                            |
-| POST `/api/uploads`                       | 开始作业/资料附件上传                                                            |
-| POST `/api/uploads/{id}/parts/{number}`   | 上传一段二进制内容                                                               |
-| POST `/api/uploads/{id}/complete`         | 确认上传完成                                                                     |
-| POST `/api/submissions`                   | 提交指定轮次作业；支持请求幂等与周期反复提交                                     |
-| POST `/api/grades`                        | 老师评分，带旧评分版本校验                                                       |
-| GET `/api/images/{id}`、`/api/files/{id}` | 鉴权读取原图和文件                                                               |
-| POST `/api/library/save`                  | 新增/修改资料、试卷、文件夹                                                      |
-| POST `/api/library/delete`                | 删除资料/试卷/文件夹，目录删除后内容回根目录                                     |
-| POST `/api/preferences/my`                | 角色头像昵称、共享目标及录取表格                                                 |
-| POST `/api/preferences/order`             | 按角色保存任务顺序                                                               |
-| POST `/api/messages/read`                 | 自己角色的消息已读                                                               |
-| POST `/api/backup`                        | 老师触发备份，返回OSS备份键                                                      |
-| POST `/api/ai/review`                     | 双方发起具体提交的点评                                                           |
-| GET `/api/ai/review?jobId=...`            | 查询点评状态                                                                     |
-| POST `/api/ai/worker/poll`                | 电脑心跳及领取任务                                                               |
-| POST `/api/ai/worker/result`              | 电脑回传结果/错误                                                                |
-| POST `/api/ai/worker/batch`               | 电脑批量回传，支持待回传内容恢复                                                 |
+| 方法与路径                                | 用途                                                                                     |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------- |
+| GET `/health`                             | 程序版本/特性，不能代替存储检查                                                          |
+| GET `/api/check`                          | 表格读取及OSS小文件读写连接检查                                                          |
+| GET `/api/snapshot?since=...`             | 全量或增量任务、记录、资料、设置与消息                                                   |
+| GET `/api/widget`                         | 安卓组件用的简化快照                                                                     |
+| POST `/api/assignment-groups`             | 双方发布新任务，仅名称必填，学科和学期选填；请求体`{group:{id,name,subject?,semester?}}` |
+| POST `/api/tasks`                         | 发布/修改/启停/软删除任务，含revision条件保护                                            |
+| POST `/api/tasks/weekdays`                | 双方修改每周完成星期的专用接口                                                           |
+| POST `/api/tasks/round-note`              | 老师修改某轮备注                                                                         |
+| POST `/api/tasks/pause`                   | 老师暂停/恢复当前轮次                                                                    |
+| POST `/api/uploads`                       | 开始作业/资料附件上传                                                                    |
+| POST `/api/uploads/{id}/parts/{number}`   | 上传一段二进制内容                                                                       |
+| POST `/api/uploads/{id}/complete`         | 确认上传完成                                                                             |
+| POST `/api/submissions`                   | 提交指定轮次作业；支持请求幂等与周期反复提交                                             |
+| POST `/api/grades`                        | 老师评分，带旧评分版本校验                                                               |
+| GET `/api/images/{id}`、`/api/files/{id}` | 鉴权读取原图和文件                                                                       |
+| POST `/api/library/save`                  | 新增/修改资料、试卷、文件夹                                                              |
+| POST `/api/library/delete`                | 删除资料/试卷/文件夹，目录删除后内容回根目录                                             |
+| POST `/api/preferences/my`                | 角色头像昵称、共享目标及录取表格                                                         |
+| POST `/api/preferences/order`             | 按角色保存任务顺序                                                                       |
+| POST `/api/messages/read`                 | 自己角色的消息已读                                                                       |
+| POST `/api/backup`                        | 老师触发备份，返回OSS备份键                                                              |
+| POST `/api/ai/review`                     | 双方发起具体提交的点评                                                                   |
+| GET `/api/ai/review?jobId=...`            | 查询点评状态                                                                             |
+| POST `/api/ai/worker/poll`                | 电脑心跳及领取任务                                                                       |
+| POST `/api/ai/worker/result`              | 电脑回传结果/错误                                                                        |
+| POST `/api/ai/worker/batch`               | 电脑批量回传，支持待回传内容恢复                                                         |
 
-请求体以`cloud/tests/`内的合成示例和当前`server.cjs`为准。不要跳过task/grade revision或自行伪造完成时间。协议版本仍为1.6.0，当前build55；App显示版本单独维护。
+请求体以`cloud/tests/`内的合成示例和当前`server.cjs`为准。不要跳过task/grade revision或自行伪造完成时间。协议版本仍为1.6.0，当前build56；App显示版本单独维护。
 
 ## 周期及提醒执行
 

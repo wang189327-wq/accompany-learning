@@ -436,6 +436,7 @@ function createService(store, objects, clock = Date.now) {
         library: await Promise.all(migrated.library.map(libraryExpanded)),
         features: {
           assignmentGroups: true,
+          optionalGroupFields: true,
           folderDelete: true,
           historyCleanup: true,
           disabledAutoCalendar: true,

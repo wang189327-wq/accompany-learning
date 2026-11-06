@@ -310,6 +310,12 @@ function checkGroupCapability() {
 async function publishAssignmentGroup(group) {
   checkGroupCapability();
   if (!['teacher', 'student'].includes(role)) throw Error('请选择学生或老师身份');
+  if (
+    typeof Cloud !== 'undefined' &&
+    (!group.subject || !group.semester) &&
+    !cloudFeatures.optionalGroupFields
+  )
+    throw Error('请先部署build56云端接口，再仅填写名称发布任务；学科和学期均为选填');
   if (typeof Cloud !== 'undefined')
     return Cloud.request('/api/assignment-groups', { method: 'POST', role, body: { group } });
   const value = AssignmentGroups.validate(group, M.SUBJECTS, M.SEMESTERS);
