@@ -63,7 +63,7 @@ function createServer(options = {}) {
           ok: true,
           service: '伴学记录',
           version: '1.6.0',
-          build: 56,
+          build: 1,
           features: {
             assignmentGroups: true,
             optionalGroupFields: true,

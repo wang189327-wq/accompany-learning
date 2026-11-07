@@ -305,7 +305,7 @@ async function checkReminders() {
 /* @runtime-end storage */
 function checkGroupCapability() {
   if (typeof Cloud !== 'undefined' && !cloudFeatures.assignmentGroups)
-    throw Error('请先部署4.0云端接口，再发布任务或保存作业关联');
+    throw Error('请先部署1.0云端接口，再发布任务或保存作业关联');
 }
 async function publishAssignmentGroup(group) {
   checkGroupCapability();
@@ -315,7 +315,7 @@ async function publishAssignmentGroup(group) {
     (!group.subject || !group.semester) &&
     !cloudFeatures.optionalGroupFields
   )
-    throw Error('请先部署build56云端接口，再仅填写名称发布任务；学科和学期均为选填');
+    throw Error('请先部署build 1云端接口，再仅填写名称发布任务；学科和学期均为选填');
   if (typeof Cloud !== 'undefined')
     return Cloud.request('/api/assignment-groups', { method: 'POST', role, body: { group } });
   const value = AssignmentGroups.validate(group, M.SUBJECTS, M.SEMESTERS);

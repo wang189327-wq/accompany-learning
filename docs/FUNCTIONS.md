@@ -62,7 +62,7 @@
 | POST `/api/ai/worker/result`              | 电脑回传结果/错误                                                                        |
 | POST `/api/ai/worker/batch`               | 电脑批量回传，支持待回传内容恢复                                                         |
 
-请求体以`cloud/tests/`内的合成示例和当前`server.cjs`为准。不要跳过task/grade revision或自行伪造完成时间。协议版本仍为1.6.0，当前build56；App显示版本单独维护。
+请求体以`cloud/tests/`内的合成示例和当前`server.cjs`为准。不要跳过task/grade revision或自行伪造完成时间。协议版本仍为1.6.0，当前build 1；App显示版本单独维护。
 
 ## 周期及提醒执行
 
