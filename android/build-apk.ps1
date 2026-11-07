@@ -54,13 +54,13 @@ if (!(Test-Path -LiteralPath $c9Key)) {
     Invoke-C9Tool (Join-Path $c9JavaBin 'keytool.exe') @('-genkeypair','-keystore',$c9Key,'-storetype','PKCS12','-alias','c9release','-keyalg','RSA','-keysize','3072','-validity','36500','-dname','CN=C9 Study Plan, OU=Private, O=C9, C=CN','-storepass:env','C9_SIGN_STORE_PASSWORD','-keypass:env','C9_SIGN_STORE_PASSWORD')
 }
 $env:C9_SIGN_STORE_PASSWORD = (Get-Content -LiteralPath $c9Secret -Raw | ConvertFrom-Json).password
-$c9Apk = Join-Path $c9Build 'BanxueRecord-v4.0.apk'
+$c9Apk = Join-Path $c9Build 'BanxueRecord-v1.0.apk'
 try {
     Invoke-C9Tool $c9Java.FullName @('-jar',(Join-Path $c9BuildTools 'lib\apksigner.jar'),'sign','--ks',$c9Key,'--ks-key-alias','c9release','--ks-pass','env:C9_SIGN_STORE_PASSWORD','--key-pass','env:C9_SIGN_STORE_PASSWORD','--v1-signing-enabled','true','--v2-signing-enabled','true','--v3-signing-enabled','true','--out',$c9Apk,(Join-Path $c9Build 'aligned.apk'))
 } finally { Remove-Item Env:C9_SIGN_STORE_PASSWORD -ErrorAction SilentlyContinue }
 Invoke-C9Tool $c9Java.FullName @('-jar',(Join-Path $c9BuildTools 'lib\apksigner.jar'),'verify','--verbose','--print-certs',$c9Apk)
 Invoke-C9Tool (Join-Path $c9BuildTools 'zipalign.exe') @('-c','-p','4',$c9Apk)
-$c9Output = Join-Path $c9Release '伴学记录-v4.0.apk'
+$c9Output = Join-Path $c9Release '伴学记录-v1.0.apk'
 Copy-Item -LiteralPath $c9Apk -Destination $c9Output -Force
 $c9Hash = (Get-FileHash -LiteralPath $c9Apk -Algorithm SHA256).Hash.ToLower()
 Set-Content -LiteralPath (Join-Path $c9Release 'SHA256.txt') -Value ($c9Hash + '  ' + [IO.Path]::GetFileName($c9Output)) -Encoding UTF8

@@ -61,7 +61,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   if (apkMode) {
     const zip = await require('../zip-reader.js').loadAsync(
       await fs.readFile(
-        process.env.C9_QA_APK_PATH || path.join(__dirname, '../android/release/伴学记录-v4.0.apk'),
+        process.env.C9_QA_APK_PATH || path.join(__dirname, '../android/release/伴学记录-v1.0.apk'),
       ),
     );
     const native = await fs.readFile(

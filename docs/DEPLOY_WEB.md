@@ -33,11 +33,11 @@ npm run build:web
 
 1. 使用自己的签名构建APK；构建前配置`updateManifestUrl`。未配置时“检查更新”会提示未配置，不连接作者站点。
 2. 更新清单和APK必须HTTPS同主机、默认端口，无凭据/查询/片段。APK路径为`/updates/banxue-record-v版本号.apk`；不接受跳转到第三方下载源。
-3. 每次实际升级提高`android/AndroidManifest.xml`中的versionCode，保持原包名和签名；versionName为显示号。初始公开源码为4.0、内部55，下次升级须使用56或更大内部号。
+3. 每次实际升级提高`android/AndroidManifest.xml`中的versionCode，保持原包名和签名；versionName为显示号。当前公开源码为1.0、版本码1，后续升级应递增版本码。
 4. 构建后生成更新文件，例如：
 
 ```sh
-node scripts/make-update.cjs android/release/伴学记录-v4.0.apk https://study.example.com 4.0 55
+node scripts/make-update.cjs android/release/伴学记录-v1.0.apk https://study.example.com 1.0 1
 ```
 
 此命令按实际APK计算大小和SHA-256，写入`cloud/public/updates/latest.json`及对应APK。命令参数必须与APK的实际版本一致；安装前原生端还会再次检查。
