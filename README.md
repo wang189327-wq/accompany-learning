@@ -70,6 +70,19 @@ GitHub Actions在Windows/Linux上运行源码检查、自动化测试和云端�
 
 新增的`build/`集中维护平台脚本清单、HTML命名区域，以及网页和安卓资源的构建过程。
 
+## 第一次阅读源码
+
+前端没有模块打包器：浏览器按`build/assets.cjs`列出的顺序加载经典脚本，部分页面状态通过`globalThis`共享。这样可以直接生成网页和安卓WebView资源，但也意味着新增或移动脚本时，必须同步构建清单、HTML引用和平台资源映射。云端使用Node.js模块，并有自己的运行依赖；“前端无打包依赖”不等于整个项目没有依赖。
+
+建议按这个顺序熟悉代码：
+
+1. 从`index.html`和`app.js`看页面入口、事件处理和状态协调。
+2. 再看`task-views.js`、`library-views.js`、`study-ui.js`等功能模块；修改目标不明确时，先查[修改位置导航](docs/DEVELOPMENT.md)。
+3. 涉及跨端资源时看`build/assets.cjs`、`build/asset-manifest.cjs`和[架构与调用流程](docs/ARCHITECTURE.md)，不要直接改生成后的`cloud/public/`或`android/build/`。
+4. 修改云端行为时沿`cloud/server.cjs`路由进入`cloud/core.cjs`或`cloud/task-service.cjs`，存储细节在`cloud/aliyun.cjs`；部署包文件还需登记在`cloud/package.cjs`。
+
+根目录保留了多个浏览器入口脚本，文件数较多是按浏览器直接加载和多端共用资源形成的组织方式。新文件优先放入`build/`、`cloud/`、`android/`、`scripts/`或`tests/`等已有目录；只有浏览器直接加载的功能模块才放根目录，并同时登记到构建清单。开始修改前读对应流程文档，完成后按改动范围运行测试与构建。
+
 | 路径                             | 作用                                      |
 | -------------------------------- | ----------------------------------------- |
 | 根目录JS、HTML、CSS              | 界面、业务模型、预览及主题                |
