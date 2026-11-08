@@ -2,6 +2,20 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { replaceRegion, scriptTags, androidStyles } = require('../build/html.cjs');
 const { BROWSER_SCRIPTS, ANDROID_SCRIPTS } = require('../build/assets.cjs');
+const fs = require('node:fs');
+const path = require('node:path');
+
+test('安卓原生资源白名单覆盖构建清单中的全部脚本', () => {
+  const java = fs.readFileSync(
+    path.join(__dirname, '../android/src/cn/c9/studyplan/MainActivity.java'),
+    'utf8',
+  );
+  const block = java.match(/ASSETS = new HashSet<>\(Arrays\.asList\(([\s\S]*?)\)\);/);
+  assert.ok(block, '原生白名单定义必须可检查');
+  const allowed = new Set([...block[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]));
+  const missing = ANDROID_SCRIPTS.filter((name) => !allowed.has(name));
+  assert.deepEqual(missing, [], '新增脚本必须同步安卓 shouldInterceptRequest 白名单');
+});
 
 test('HTML区域可重复用于多平台，缺失或重复入口明确失败', () => {
   const html = '<!-- @build:styles:begin -->old<!-- @build:styles:end -->';

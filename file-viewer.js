@@ -6,9 +6,7 @@ const FileViewer = (() => {
     objectUrl = null,
     pdf = null,
     pdfTask = null,
-    pdfPage = 1,
     renderTask = null,
-    pdfRenderId = 0,
     gesture = null,
     busyDownload = false,
     imageZoom = null,
@@ -21,10 +19,15 @@ const FileViewer = (() => {
     pdfSlots = [],
     pdfPumping = false;
   let lastTiming = null;
-  const wordCache = new Map(),
-    localWordIds = new WeakMap();
-  let nextWordId = 0,
-    wordCacheBytes = 0;
+  // 解析结果缓存：Word 复用已渲染的 DOM，PDF 复用已解析的文档对象。
+  // 键包含内容摘要，同一 uploadId 下内容变化不会命中旧结果。
+  const parsedCache = C9ContentCache.create({ maxBytes: 32 * 1024 * 1024, maxEntries: 4 });
+  let pdfCached = false;
+  // 取缓存键。摘要基于内容本身，因此不需要再按连接作用域区分。
+  async function parsedKeyFor(data, file) {
+    const hash = await C9ContentCache.digest(data);
+    return C9ContentCache.key(file.uploadId ? 'cloud' : 'local', file.uploadId, hash);
+  }
   const el = (id) => document.getElementById(id);
   document.body.insertAdjacentHTML(
     'beforeend',
@@ -40,7 +43,6 @@ const FileViewer = (() => {
     pdfQualityRevision++;
     documentZoom?.destroy();
     documentZoom = null;
-    pdfRenderId++;
     pdfObserver?.disconnect();
     pdfObserver = null;
     pdfVisible.clear();
@@ -55,10 +57,13 @@ const FileViewer = (() => {
       document = pdf;
     pdfTask = null;
     pdf = null;
-    try {
-      if (task) Promise.resolve(task.destroy()).catch(() => {});
-      else if (document) Promise.resolve(document.destroy()).catch(() => {});
-    } catch {}
+    // 来自解析缓存的文档不在这里销毁，留给下次打开复用；淘汰时才真正释放。
+    if (pdfCached) pdfCached = false;
+    else
+      try {
+        if (task) Promise.resolve(task.destroy()).catch(() => {});
+        else if (document) Promise.resolve(document.destroy()).catch(() => {});
+      } catch {}
     if (objectUrl) URL.revokeObjectURL(objectUrl);
     objectUrl = null;
     el('galleryContent').classList.remove('imageGalleryActive', 'documentGalleryActive');
@@ -434,20 +439,12 @@ const FileViewer = (() => {
       styles = document.createElement('div');
     body.className = 'docxPreview';
     el('galleryContent').replaceChildren(styles, body);
-    let key;
-    if (file.uploadId && typeof Cloud !== 'undefined')
-      key = (await Cloud.attachmentScope()) + '|' + file.uploadId;
-    else {
-      if (!localWordIds.has(data)) localWordIds.set(data, ++nextWordId);
-      key = 'local:' + localWordIds.get(data);
-    }
+    const key = await parsedKeyFor(data, file);
     if (stamp !== serial) return;
-    const cached = wordCache.get(key);
+    const cached = key ? parsedCache.get(key) : null;
     if (cached) {
       styles.append(...[...cached.styles.childNodes].map((n) => n.cloneNode(true)));
       body.append(...[...cached.body.childNodes].map((n) => n.cloneNode(true)));
-      wordCache.delete(key);
-      wordCache.set(key, cached);
       timing.reusedParsed = true;
     } else {
       await docx.renderAsync(data, body, styles, {
@@ -460,16 +457,14 @@ const FileViewer = (() => {
         renderComments: false,
       });
       if (stamp !== serial) return;
+      // DOM 常驻内存，按字符数粗估字节；超过预算时由缓存自身淘汰。
       const size = body.innerHTML.length * 2 + styles.innerHTML.length * 2;
-      if (size <= 16 * 1024 * 1024) {
-        while (wordCache.size >= 2 || wordCacheBytes + size > 16 * 1024 * 1024) {
-          const oldest = wordCache.keys().next().value;
-          wordCacheBytes -= wordCache.get(oldest).size;
-          wordCache.delete(oldest);
-        }
-        wordCache.set(key, { body: body.cloneNode(true), styles: styles.cloneNode(true), size });
-        wordCacheBytes += size;
-      }
+      if (key)
+        parsedCache.set(
+          key,
+          { body: body.cloneNode(true), styles: styles.cloneNode(true) },
+          { bytes: size },
+        );
     }
     for (const link of body.querySelectorAll('a')) {
       const href = link.getAttribute('href') || '';
@@ -539,49 +534,74 @@ const FileViewer = (() => {
         /application\/pdf/i.test(file.contentType || data.type || '')
       ) {
         text('正在解析 PDF…');
-        const lib = await import('./pdf.mjs');
+        const buffer = await data.arrayBuffer();
         if (stamp !== serial) return;
-        lib.GlobalWorkerOptions.workerSrc = new URL('pdf.worker.mjs', location.href).href;
-        const bytes = new Uint8Array(await data.arrayBuffer());
+        const bytes = new Uint8Array(buffer);
+        const pdfHash = await C9ContentCache.digest(buffer);
+        const pdfKey = C9ContentCache.key(
+          file.uploadId ? 'cloud' : 'local',
+          file.uploadId,
+          pdfHash,
+        );
         if (stamp !== serial) return;
-        if (typeof C9Android !== 'undefined') {
-          globalThis.pdfjsWorker = await import('./pdf.worker.mjs');
+        const cachedDoc = pdfKey ? parsedCache.get(pdfKey) : null;
+        if (cachedDoc && typeof cachedDoc.numPages === 'number') {
+          pdf = cachedDoc;
+          pdfTask = null;
+          pdfCached = true;
+          timing.reusedParsed = true;
+          await pdfRender(stamp);
+        } else {
+          if (cachedDoc) parsedCache.drop(pdfKey);
+          const lib = await import('./pdf.mjs');
           if (stamp !== serial) return;
-        }
-        const options = {
-          ...(typeof C9Android !== 'undefined'
-            ? { useSystemFonts: false, useWorkerFetch: false }
-            : {}),
-          isEvalSupported: false,
-          isImageDecoderSupported: false,
-          isOffscreenCanvasSupported: false,
-          cMapUrl: new URL('pdf-cmaps/', location.href).href,
-          cMapPacked: true,
-          standardFontDataUrl: new URL('pdf-fonts/', location.href).href,
-          wasmUrl: new URL('pdf-wasm/', location.href).href,
-        };
-        let task = lib.getDocument({ ...options, data: bytes.slice() });
-        pdfTask = task;
-        let document;
-        try {
-          document = await task.promise;
-        } catch (error) {
-          if (!/worker/i.test(error.message || '')) throw error;
-          await task.destroy().catch(() => {});
-          if (stamp !== serial) return;
-          globalThis.pdfjsWorker = await import('./pdf.worker.mjs');
-          if (stamp !== serial) return;
-          task = lib.getDocument({ ...options, data: bytes.slice() });
+          lib.GlobalWorkerOptions.workerSrc = new URL('pdf.worker.mjs', location.href).href;
+          if (typeof C9Android !== 'undefined') {
+            globalThis.pdfjsWorker = await import('./pdf.worker.mjs');
+            if (stamp !== serial) return;
+          }
+          const options = {
+            ...(typeof C9Android !== 'undefined'
+              ? { useSystemFonts: false, useWorkerFetch: false }
+              : {}),
+            isEvalSupported: false,
+            isImageDecoderSupported: false,
+            isOffscreenCanvasSupported: false,
+            cMapUrl: new URL('pdf-cmaps/', location.href).href,
+            cMapPacked: true,
+            standardFontDataUrl: new URL('pdf-fonts/', location.href).href,
+            wasmUrl: new URL('pdf-wasm/', location.href).href,
+          };
+          let task = lib.getDocument({ ...options, data: bytes.slice() });
           pdfTask = task;
-          document = await task.promise;
+          let document;
+          try {
+            document = await task.promise;
+          } catch (error) {
+            if (!/worker/i.test(error.message || '')) throw error;
+            await task.destroy().catch(() => {});
+            if (stamp !== serial) return;
+            globalThis.pdfjsWorker = await import('./pdf.worker.mjs');
+            if (stamp !== serial) return;
+            task = lib.getDocument({ ...options, data: bytes.slice() });
+            pdfTask = task;
+            document = await task.promise;
+          }
+          if (stamp !== serial) {
+            await document.destroy();
+            return;
+          }
+          pdf = document;
+          // 解析后的文档占用约为原文件数倍，按此估算预算；淘汰时显式销毁释放。
+          pdfCached = !!(
+            pdfKey &&
+            parsedCache.set(pdfKey, document, {
+              bytes: buffer.byteLength * 4,
+              dispose: () => Promise.resolve(document.destroy()).catch(() => {}),
+            })
+          );
+          await pdfRender(stamp);
         }
-        if (stamp !== serial) {
-          await document.destroy();
-          return;
-        }
-        pdf = document;
-        pdfPage = 1;
-        await pdfRender(stamp);
       } else if (/\.docx$/i.test(file.name)) {
         text('正在解析 Word…');
         await wordPreview(data, file, stamp, timing);

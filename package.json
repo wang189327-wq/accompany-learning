@@ -13,12 +13,14 @@
     "package:cloud": "node cloud/package.cjs",
     "dev": "node scripts/dev.cjs",
     "test": "node scripts/test.cjs",
+    "lint": "eslint .",
     "test:apk": "node --test android/asset-paths.test.cjs",
     "check:public": "node scripts/check-public.cjs",
     "format": "node scripts/format.cjs",
     "format:check": "node scripts/format.cjs --check"
   },
   "devDependencies": {
+    "eslint": "^9.39.5",
     "prettier": "3.9.10"
   }
 }

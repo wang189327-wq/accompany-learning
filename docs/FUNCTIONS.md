@@ -27,6 +27,8 @@
 | `model.js`、`study-model.js`、`my-model.js` | 周期、日期、评分、资料、成绩、目标和表格模型             |
 | `cloud/runtime-*.js`                        | 将本地界面明确适配为网络读写的构建边界                   |
 | `attachment-cache.js`                       | 内存/IndexedDB附件缓存、LRU、并发合并与连接隔离          |
+| `content-cache.js`                          | 附件解析结果缓存，按内容摘要命中，淘汰时释放文档         |
+| `submission-views.js`、`grade-flow.js`      | 提交记录渲染、评分对话框与分数颜色                       |
 | `file-viewer.js`、`image-zoom.js`           | 只读文件预览、连续PDF及图片/文档缩放                     |
 
 ## API

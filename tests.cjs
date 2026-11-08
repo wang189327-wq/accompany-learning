@@ -168,6 +168,8 @@ function renderFixture(testMode) {
     Date,
     console,
   });
+  vm.runInContext(fs.readFileSync(path.join(__dirname, 'submission-views.js'), 'utf8'), browser);
+  vm.runInContext(fs.readFileSync(path.join(__dirname, 'grade-flow.js'), 'utf8'), browser);
   vm.runInContext(fs.readFileSync(path.join(__dirname, 'task-order.js'), 'utf8'), browser);
   vm.runInContext(fs.readFileSync(path.join(__dirname, 'task-views.js'), 'utf8'), browser);
   vm.runInContext(fs.readFileSync(path.join(__dirname, 'app.js'), 'utf8'), browser);

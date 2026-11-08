@@ -131,10 +131,9 @@ async function fixture() {
     await fs.readFile(path.join(__dirname, 'build/assets/task-order.js'), 'utf8'),
     context,
   );
-  vm.runInContext(
-    await fs.readFile(path.join(__dirname, 'build/assets/task-views.js'), 'utf8'),
-    context,
-  );
+  for (const name of ['submission-views.js', 'grade-flow.js', 'task-views.js']) {
+    vm.runInContext(await fs.readFile(path.join(__dirname, 'build/assets', name), 'utf8'), context);
+  }
   vm.runInContext(source, context);
   vm.runInContext(
     "StudyUI.state={task:{completion:'all'}};syncMarkup=(target,html)=>{target.innerHTML=html;};tasks=fixtureTasks;records=fixtureRecords;db={cloud:true};",
