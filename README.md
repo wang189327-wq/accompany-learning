@@ -61,7 +61,7 @@ APK 只是客户端，**不包含任何云端地址或访问码**。装完必须
 
 不想装任何东西，可以打开[在线演示](https://wang189327-wq.github.io/accompany-learning/demo/)：五个页面都能点，改分数、交作业、切换角色都行，数据是预置的示例，改动只留在你自己的浏览器里。演示不连云端，也不保存任何内容。
 
-演示页不是另做的一套界面，而是由 `scripts/build-demo.cjs` 从根目录 `index.html` 生成、再由 `docs/demo/demo-boot.js` 写入示例数据后启动的同一份代码。`docs/demo/index.html` 是生成结果，改界面请改根目录那份。
+演示页不是另做的一套界面，而是由 `scripts/build-demo.cjs` 从根目录 `index.html` 生成、再由 `demo/demo-boot.js` 写入示例数据后启动的同一份代码。`demo/index.html` 是生成结果，改界面请改根目录那份。
 
 ## 本机先看看
 

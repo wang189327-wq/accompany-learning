@@ -309,8 +309,8 @@
       }
       db.close();
       localStorage.setItem('c9-last-role', localStorage.getItem('c9-last-role') || 'student');
-      await loadScript('../../app.js');
-      await loadScript('../../pull-refresh.js');
+      await loadScript('../app.js');
+      await loadScript('../pull-refresh.js');
       await waitFor(() => document.querySelector('nav.bottomNav'), 4000);
       notice();
     } catch (error) {
