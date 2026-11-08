@@ -3,6 +3,7 @@ node_modules/
 .env.*
 !.env.example
 public-config.local.json
+personal-origin.json
 cloud/public/
 cloud/release/
 cloud/local-data/

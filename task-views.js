@@ -213,7 +213,6 @@ const TaskViews = (() => {
         escapeHTML,
         kindText,
         formatText,
-        dateText,
         scoreHTML,
         role,
         periodNoteName,
@@ -227,8 +226,7 @@ const TaskViews = (() => {
             ? { label: '已停用', color: 'purple' }
             : t.requiresTeaching
               ? { ...base, color: r ? 'green' : 'blue' }
-              : base,
-        w = M.windowFor(t, p);
+              : base;
       return [
         `<article${TaskOrdering.card(t.id)} class="card taskCard ${s.color} ${t.createdBy === 'student' ? 'studentTask' : ''} ${t.requiresTeaching ? 'courseTask' : ''} ${!t.enabled ? 'disabledTask' : ''}">`,
         `${TaskOrdering.actions(t.id)}${badge(s)}<span class="badge${compact ? ' semesterTaskBadge' : ''}">`,

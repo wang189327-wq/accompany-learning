@@ -243,8 +243,7 @@
     const window = windowFor(task, round);
     if (now < window.start) throw Error('尚未到作业可完成时间');
     if (task.kind === 'recurring' && now <= window.end) {
-      const d = local(now),
-        day = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - OFFSET;
+      const d = local(now);
       if (
         task.rule === 'week' &&
         task.weekDays?.length &&

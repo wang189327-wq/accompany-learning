@@ -65,8 +65,6 @@ const StudyUI = (() => {
     choices(id, values) +
     '</details></div>';
   const picked = (id) => [...byId(id).querySelectorAll('input:checked')].map((x) => x.value);
-  const size = (n) =>
-    n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.ceil(n / 1024) + ' KB';
   function set(list, ready = true, features) {
     entries = list || [];
     available = ready;
@@ -422,12 +420,6 @@ const StudyUI = (() => {
     viewerUrls.forEach(URL.revokeObjectURL);
     viewerUrls = [];
   }
-  function isImageFile(file) {
-    return (
-      /^image\//i.test(file.contentType || file.blob?.type || '') ||
-      /\.(png|jpe?g|gif|webp|bmp|avif)$/i.test(file.name || '')
-    );
-  }
   function previewFile(entry, index) {
     const scope = entry.type === 'exam' ? 'exams' : 'materials',
       f = state[scope],
@@ -440,53 +432,6 @@ const StudyUI = (() => {
       queue = list.flatMap((x) => x.files.map((file) => ({ entry: x, file }))),
       selected = queue.findIndex((x) => x.entry.id === entry.id && x.file === entry.files[index]);
     FileViewer.open(queue, Math.max(0, selected));
-  }
-  function view(entry) {
-    viewer = entry;
-    releaseViewer();
-    byId('libraryViewTitle').textContent = entry.name;
-    byId('libraryViewBody').innerHTML = [
-      `<p>`,
-      `<span class="badge green">`,
-      `${esc(entry.subject)}</span>`,
-      `${entry.type === 'exam' ? `<span class="badge">${esc(entry.semester)}</span>` : `<span class="badge">${entry.uploader === 'teacher' ? '老师' : '学生'}</span>`}</p>`,
-      `${entry.type === 'material' ? `<p class="muted">${(entry.semesters || ['七年级上学期']).map(esc).join('、')}</p>` : ''}${
-        entry.type === 'exam'
-          ? [
-              `<p class="paperScore">成绩 ${entry.score ?? '—'}/${entry.fullScore ?? '—'} · 班级第 ${entry.rank ?? '—'} 名 · 年级第 ${entry.gradeRank ?? '—'} 名${entry.targetScore == null ? '' : ' · 目标 ' + entry.targetScore + ' 分'}</p>`,
-              `<p>考试日期：${entry.examDate ? S.dateLabel(entry.examDate) : '未设置'}</p>`,
-              `<div class="content">`,
-              `${esc(entry.notes)}</div>`,
-            ].join('')
-          : ''
-      }<div class="fileList">`,
-      `${entry.files
-        .map((file, i) => {
-          let url = file.url;
-          if (file.blob) {
-            url = URL.createObjectURL(file.blob);
-            viewerUrls.push(url);
-          }
-          return [
-            `<article class="fileRow">`,
-            `${isImageFile(file) ? `<img class="filePreview" src="${esc(url)}" alt="${esc(file.name)}" data-file-preview="${i}" title="点击全屏查看">` : '<div class="fileIcon">' + esc(file.name.split('.').at(-1).toUpperCase()) + '</div>'}<div class="fileMeta">`,
-            `<strong>`,
-            `${esc(file.name)}</strong>`,
-            `<p class="muted">`,
-            `${size(file.size || file.blob?.size || 0)}</p>`,
-            `</div>`,
-            `<button data-file-open="${i}">查看</button>`,
-            `<button data-file-download="${i}">下载</button>`,
-            `</article>`,
-          ].join('');
-        })
-        .join('')}</div>`,
-      `<div class="actions">`,
-      `<button data-library-edit="${entry.id}">编辑 / 移动</button>`,
-      `<button class="danger" data-library-delete="${entry.id}">删除</button>`,
-      `</div>`,
-    ].join('');
-    byId('libraryViewer').showModal();
   }
   document.body.insertAdjacentHTML(
     'beforeend',

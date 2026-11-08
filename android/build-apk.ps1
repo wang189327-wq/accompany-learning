@@ -64,4 +64,5 @@ $c9Output = Join-Path $c9Release '伴学记录-v1.0.apk'
 Copy-Item -LiteralPath $c9Apk -Destination $c9Output -Force
 $c9Hash = (Get-FileHash -LiteralPath $c9Apk -Algorithm SHA256).Hash.ToLower()
 Set-Content -LiteralPath (Join-Path $c9Release 'SHA256.txt') -Value ($c9Hash + '  ' + [IO.Path]::GetFileName($c9Output)) -Encoding UTF8
+Invoke-C9Tool 'node' @((Join-Path $c9Root '../scripts/release-record.cjs'),$c9Output)
 Write-Output ('APK 已生成：' + $c9Output)

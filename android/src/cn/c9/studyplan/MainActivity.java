@@ -45,7 +45,7 @@ public final class MainActivity extends Activity {
     private static final int PICK_IMAGES = 91, SAVE_PERMISSION = 92, SAVE_DOCUMENT = 93;
     private static final String HOME = "https://localhost/index.html";
     private static final Set<String> ASSETS = new HashSet<>(Arrays.asList(
-        "my-model.js", "my-page.js", "background-settings.js", "pull-refresh.js", "index.html", "startup-watch.js", "model.js", "study-model.js", "study-ui.js", "task-order.js", "image-zoom.js", "file-viewer.js", "attachment-cache.js", "zip-reader.js", "docx-reader.js", "pdf.mjs", "pdf.worker.mjs", "cloud-client.js","runtime-config.js", "font-settings.js", "android-client.js", "assignment-groups.js","assignment-groups-ui.js","task-views.js","library-views.js","app.js"));
+        "my-model.js", "my-page.js", "background-settings.js", "pull-refresh.js", "index.html", "startup-watch.js", "model.js", "study-model.js", "study-ui.js", "task-order.js", "image-zoom.js", "file-viewer.js", "attachment-cache.js", "zip-reader.js", "docx-reader.js", "pdf.mjs", "pdf.worker.mjs", "cloud-client.js","runtime-config.js", "font-settings.js", "android-client.js", "assignment-groups.js","assignment-groups-ui.js","task-views.js","library-views.js","content-cache.js","submission-views.js","grade-flow.js","app.js"));
     private WebView web;
     private ValueCallback<Uri[]> fileCallback;
     private String pendingDocument;
