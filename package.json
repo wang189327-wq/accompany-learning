@@ -11,6 +11,7 @@
     "build": "node cloud/build.cjs",
     "build:web": "node scripts/build-web.cjs",
     "package:cloud": "node cloud/package.cjs",
+    "demo": "node scripts/build-demo.cjs",
     "dev": "node scripts/dev.cjs",
     "test": "node scripts/test.cjs",
     "lint": "eslint .",

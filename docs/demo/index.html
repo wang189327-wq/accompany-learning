@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>伴学记录 · 交互演示</title>
+    <!-- @build:styles:begin -->
+    <link rel="stylesheet" href="../../styles.css" />
+    <!-- @build:styles:end -->
+  </head>
+  <body>
+    <header>
+      <div class="brandLine">
+        <h1>伴学记录</h1>
+        <div class="muted" id="appSubtitle">两个人，一起把事情完成</div>
+      </div>
+    </header>
+    <section id="settingsPanel" class="card hidden">
+      <h2>设置</h2>
+      <div class="settingsRow">
+        <button id="connectionSettings">连接设置</button
+        ><button id="switchRole" class="hidden">切换角色</button
+        ><button id="fontSettings">文字大小</button
+        ><button id="backgroundSettings">背景色选择</button
+        ><button id="checkUpdate">检查更新</button>
+      </div>
+      <p id="storageStatus" class="muted" role="status" aria-live="polite" hidden></p>
+    </section>
+    <main id="app">
+      <p><!-- @build:loading:begin -->正在加载本地数据…<!-- @build:loading:end --></p>
+    </main>
+    <dialog id="formDialog">
+      <div class="dialogHead">
+        <h3 id="formTitle">发布作业</h3>
+        <button data-close="formDialog">关闭</button>
+      </div>
+      <form id="taskForm">
+        <div id="assignmentGroupField"></div>
+        <div class="fields">
+          <label class="full"
+            >作业名称<input id="name" required placeholder="例如：每周阅读总结" /></label
+          ><label
+            >学科<select id="subject">
+              <option value="">请选择学科</option>
+              <option value="语文">语文</option>
+              <option value="数学">数学</option>
+              <option value="英语">英语</option>
+              <option value="政治">政治</option>
+              <option value="历史">历史</option>
+              <option value="地理">地理</option>
+              <option value="物理">物理</option>
+              <option value="化学">化学</option>
+              <option value="生物">生物</option>
+            </select></label
+          ><label
+            >所属学期<select id="taskSemester">
+              <option value="">请选择学期</option>
+              <option>七年级上学期</option>
+              <option>七年级下学期</option>
+              <option>八年级上学期</option>
+              <option>八年级下学期</option>
+              <option>九年级上学期</option>
+              <option>九年级下学期</option>
+            </select></label
+          ><label class="full"
+            >是否需要授课<select id="requiresTeaching">
+              <option value="">请选择</option>
+              <option value="true">是</option>
+              <option value="false">否</option>
+            </select></label
+          ><label
+            >作业类型<select id="kind">
+              <option value="recurring">周期作业</option>
+              <option value="once">单次作业</option>
+            </select></label
+          ><label id="ruleLabel"
+            >周期规则<select id="rule">
+              <option value="day">每天</option>
+              <option value="week">每周</option>
+              <option value="month">每月</option>
+            </select></label
+          ><label
+            >提交形式<select id="format">
+              <option value="text">文字</option>
+              <option value="image">图片</option>
+              <option value="file">文件</option>
+              <option value="auto">默认打卡</option>
+            </select></label
+          ><label id="deadlineLabel" class="hidden"
+            >截止日期<input id="deadline" type="date" /></label
+          ><label
+            >是否启用<select id="enabled">
+              <option value="true">启用</option>
+              <option value="false">停用</option>
+            </select></label
+          >
+        </div>
+        <div class="scheduleFields" id="onceRange">
+          <label>可完成开始日期<input id="availableFrom" type="date" /></label>
+        </div>
+        <div id="recurringRange">
+          <div class="scheduleFields hidden">
+            <label
+              >每日可完成开始时间<input id="startTime" type="time" step="60" value="00:00" /></label
+            ><label
+              >每日完成结束时间<input id="endTime" type="time" step="60" value="23:59"
+            /></label>
+          </div>
+          <div id="weekDaysLabel">
+            <label>每周完成星期（可多选）</label>
+            <div class="weekdayChoices">
+              <label><input type="checkbox" name="weekDay" value="0" />周一</label
+              ><label><input type="checkbox" name="weekDay" value="1" />周二</label
+              ><label><input type="checkbox" name="weekDay" value="2" />周三</label
+              ><label><input type="checkbox" name="weekDay" value="3" />周四</label
+              ><label><input type="checkbox" name="weekDay" value="4" />周五</label
+              ><label><input type="checkbox" name="weekDay" value="5" />周六</label
+              ><label><input type="checkbox" name="weekDay" value="6" />周日</label>
+            </div>
+          </div>
+        </div>
+        <div id="teacherTaskFields">
+          <label
+            >作业备注（仅老师可编辑）<textarea
+              id="taskNote"
+              rows="2"
+              placeholder="可不填写"
+            ></textarea></label
+          ><label id="periodNoteLabel"
+            ><span id="periodNoteCaption">本周备注（仅当前轮次）</span
+            ><textarea id="periodNote" rows="2" placeholder="下一轮自动留空"></textarea
+            ><span id="periodNoteHint" class="muted"></span></label
+          ><label class="inlineCheck"
+            ><input id="reminderEnabled" type="checkbox" />提醒学生完成</label
+          >
+          <div class="reminderFields">
+            <label
+              >提前量<input
+                id="reminderAmount"
+                type="number"
+                min="0.001"
+                step="any"
+                value="1" /></label
+            ><label
+              >单位<select id="reminderUnit">
+                <option value="minutes">分钟</option>
+                <option value="hours" selected>小时</option>
+                <option value="days">天</option>
+              </select></label
+            >
+          </div>
+          <p class="muted">单次作业按截止时间，周期作业按每轮结束时间；每轮最多提醒一次。</p>
+        </div>
+        <p class="hidden" id="editHint"></p>
+        <div class="error" id="formError"></div>
+        <button class="primary" type="submit" id="publishButton">保存并发布</button>
+      </form>
+    </dialog>
+    <dialog id="detailDialog">
+      <div class="dialogHead">
+        <h3 id="detailTitle"></h3>
+        <button data-close="detailDialog">关闭</button>
+      </div>
+      <div id="detailBody"></div>
+    </dialog>
+    <dialog id="submitDialog">
+      <div class="dialogHead">
+        <h3 id="submitTitle">提交成果</h3>
+        <button data-close="submitDialog">关闭</button>
+      </div>
+      <form id="submitForm">
+        <p id="submitInfo" class="muted"></p>
+        <label id="textLabel"
+          >作业内容<textarea id="resultText" placeholder="请输入作业内容"></textarea></label
+        ><label id="imageLabel" class="hidden"
+          >选择图片（可多选）<input
+            id="resultImages"
+            type="file"
+            accept="image/*"
+            multiple /></label
+        ><label id="attachmentLabel" class="hidden"
+          >选择文件（可多选）<input id="resultFiles" type="file" multiple
+        /></label>
+        <p id="fileInfo" class="muted"></p>
+        <label
+          >作业自评分（满分 10 分，必选）<select id="selfScore" required>
+            <option value="">请选择分数</option>
+            <option value="0">0 分</option>
+            <option value="1">1 分</option>
+            <option value="2">2 分</option>
+            <option value="3">3 分</option>
+            <option value="4">4 分</option>
+            <option value="5">5 分</option>
+            <option value="6">6 分</option>
+            <option value="7">7 分</option>
+            <option value="8">8 分</option>
+            <option value="9">9 分</option>
+            <option value="10">10 分</option>
+          </select></label
+        >
+        <div id="submitError" class="error"></div>
+        <button type="submit" class="primary" id="submitButton">确认提交</button>
+      </form>
+    </dialog>
+    <dialog id="photoDialog">
+      <div class="dialogHead">
+        <h3>图片预览</h3>
+        <button data-close="photoDialog">关闭</button>
+      </div>
+      <div id="homeworkPhotoStage" class="homeworkPhotoStage">
+        <img id="largePhoto" class="photo" alt="成果大图" draggable="false" />
+      </div>
+      <div id="photoZoomControls" class="galleryControls photoZoomControls" aria-label="图片缩放">
+        <button data-zoom-action="out" aria-label="缩小图片">−</button
+        ><button data-zoom-action="reset">适应屏幕</button
+        ><button data-zoom-action="in" aria-label="放大图片">＋</button>
+      </div>
+      <div class="photoPaging">
+        <button id="previousHomeworkPhoto">上一张</button
+        ><span id="homeworkPhotoCount" role="status"></span
+        ><button id="nextHomeworkPhoto">下一张</button>
+      </div>
+      <div class="actions">
+        <a id="downloadPhoto"><button>手动保存图片</button></a>
+      </div>
+    </dialog>
+    <dialog id="gradeDialog">
+      <div class="dialogHead">
+        <h3 id="gradeTitle">老师评分</h3>
+        <button data-close="gradeDialog">关闭</button>
+      </div>
+      <form id="gradeForm">
+        <label
+          >老师评分（满分 10 分）<select id="teacherScore" required>
+            <option value="">请选择分数</option>
+            <option value="0">0 分</option>
+            <option value="1">1 分</option>
+            <option value="2">2 分</option>
+            <option value="3">3 分</option>
+            <option value="4">4 分</option>
+            <option value="5">5 分</option>
+            <option value="6">6 分</option>
+            <option value="7">7 分</option>
+            <option value="8">8 分</option>
+            <option value="9">9 分</option>
+            <option value="10">10 分</option>
+          </select></label
+        >
+        <div id="gradeError" class="error"></div>
+        <button type="submit" class="primary" id="gradeButton">保存评分</button>
+      </form>
+    </dialog>
+    <dialog id="fontDialog">
+      <div class="dialogHead">
+        <h3>文字大小</h3>
+        <button data-close="fontDialog">关闭</button>
+      </div>
+      <label
+        >本设备文字大小<select id="fontSizeSelect">
+          <option value="small">小</option>
+          <option value="standard">标准</option>
+          <option value="large">大</option>
+          <option value="extraLarge">特大</option>
+        </select></label
+      >
+      <p id="fontSaveHint" class="muted"></p>
+    </dialog>
+    <!-- @build:connection:begin -->
+    <dialog id="localConnectionDialog">
+      <div class="dialogHead">
+        <h3>连接设置</h3>
+        <button data-close="localConnectionDialog">关闭</button>
+      </div>
+      <p>本机测试版：数据保存在当前浏览器，同一浏览器的老师和学生角色共用学习目标与消息。</p>
+      <p>本机测试完成后再升级阿里云接口、启用跨设备同步；此版本不会改动现有云端数据。</p>
+    </dialog>
+    <!-- @build:connection:end -->
+    <div id="pullStatus" role="status" class="hidden"></div>
+    <dialog id="roundNoteDialog">
+      <div class="dialogHead">
+        <h3 id="roundNoteTitle">编辑本周期备注</h3>
+        <button data-close="roundNoteDialog">关闭</button>
+      </div>
+      <form id="roundNoteForm">
+        <label
+          ><span id="roundNoteCaption">本周备注</span><textarea id="roundNoteText"></textarea>
+        </label>
+        <p class="error" id="roundNoteError"></p>
+        <button type="submit" class="primary" id="saveRoundNote">保存</button>
+      </form>
+    </dialog>
+    <div id="toast" class="hidden" role="status"></div>
+    <input id="restoreFile" class="hidden" type="file" accept="application/json,.json" />
+    <dialog id="weekDaysDialog">
+      <div class="dialogHead">
+        <h3>修改完成星期</h3>
+        <button data-close="weekDaysDialog">关闭</button>
+      </div>
+      <p>立即影响当前轮次，已有提交记录保留。</p>
+      <form id="weekDaysForm">
+        <div id="weekDaysEdit" class="weekdayChoices"></div>
+        <p id="weekDaysError" class="error"></p>
+        <button class="primary" type="submit">保存星期</button>
+      </form>
+    </dialog>
+    <!-- @build:scripts:begin -->
+    <script src="../../model.js"></script>
+    <script src="../../assignment-groups.js"></script>
+    <script src="../../assignment-groups-ui.js"></script>
+    <script src="../../attachment-cache.js"></script>
+    <script src="../../content-cache.js"></script>
+    <script src="../../study-model.js"></script>
+    <script src="../../library-views.js"></script>
+    <script src="../../study-ui.js"></script>
+    <script src="../../task-order.js"></script>
+    <script src="../../zip-reader.js"></script>
+    <script src="../../docx-reader.js"></script>
+    <script src="../../image-zoom.js"></script>
+    <script src="../../file-viewer.js"></script>
+    <script src="../../my-model.js"></script>
+    <script src="../../my-page.js"></script>
+    <script src="../../font-settings.js"></script>
+    <script src="../../background-settings.js"></script>
+    <script src="../../submission-views.js"></script>
+    <script src="../../grade-flow.js"></script>
+    <script src="../../task-views.js"></script>
+    <script src="./demo-boot.js"></script>
+    <!-- @build:scripts:end -->
+  </body>
+</html>
