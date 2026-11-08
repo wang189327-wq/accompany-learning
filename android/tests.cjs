@@ -116,7 +116,14 @@ test('APK assets start locally and await native album save errors', async () => 
     path.join(__dirname, 'src/cn/c9/studyplan/MainActivity.java'),
     'utf8',
   );
-  const assetList = native.match(/ASSETS\s*=\s*new HashSet<>\(Arrays\.asList\(([\s\S]*?)\)\)/);
+  const generatedAssets = await fs.readFile(
+    path.join(__dirname, 'src/cn/c9/studyplan/AssetList.java'),
+    'utf8',
+  );
+  assert.ok(native.includes('ASSETS = AssetList.NAMES'));
+  const assetList = generatedAssets.match(
+    /NAMES\s*=\s*new HashSet<>\(Arrays\.asList\(([\s\S]*?)\)\)/,
+  );
   assert.ok(assetList, 'Android asset routing allowlist exists');
   const allowed = new Set([...assetList[1].matchAll(/"([^"]+)"/g)].map((x) => x[1]));
   for (const name of names)

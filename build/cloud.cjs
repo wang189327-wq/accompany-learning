@@ -11,6 +11,10 @@ async function build() {
   const cloud = path.join(root, 'cloud');
   const out = path.join(cloud, 'public');
   await fs.mkdir(out, { recursive: true });
+  await fs.writeFile(
+    path.join(cloud, 'static-assets.json'),
+    JSON.stringify(require('./asset-manifest.cjs').cloudMap(), null, 2) + '\n',
+  );
   const config = readConfig();
   await fs.writeFile(
     path.join(out, 'runtime-config.js'),

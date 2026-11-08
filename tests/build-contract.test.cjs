@@ -4,13 +4,33 @@ const { replaceRegion, scriptTags, androidStyles } = require('../build/html.cjs'
 const { BROWSER_SCRIPTS, ANDROID_SCRIPTS } = require('../build/assets.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
+const { cloudMap, javaSource } = require('../build/asset-manifest.cjs');
+
+test('云端路由、HTML与原生白名单从同一脚本清单生成', () => {
+  const generated = require('../cloud/static-assets.json');
+  assert.deepEqual(generated, cloudMap());
+  for (const script of BROWSER_SCRIPTS) assert.equal(generated['/' + script], script);
+  const java = fs.readFileSync(
+    path.join(__dirname, '../android/src/cn/c9/studyplan/AssetList.java'),
+    'utf8',
+  );
+  assert.equal(java, javaSource());
+  assert.ok(
+    fs
+      .readFileSync(
+        path.join(__dirname, '../android/src/cn/c9/studyplan/MainActivity.java'),
+        'utf8',
+      )
+      .includes('ASSETS = AssetList.NAMES'),
+  );
+});
 
 test('安卓原生资源白名单覆盖构建清单中的全部脚本', () => {
   const java = fs.readFileSync(
-    path.join(__dirname, '../android/src/cn/c9/studyplan/MainActivity.java'),
+    path.join(__dirname, '../android/src/cn/c9/studyplan/AssetList.java'),
     'utf8',
   );
-  const block = java.match(/ASSETS = new HashSet<>\(Arrays\.asList\(([\s\S]*?)\)\);/);
+  const block = java.match(/NAMES = new HashSet<>\(Arrays\.asList\(([\s\S]*?)\)\);/);
   assert.ok(block, '原生白名单定义必须可检查');
   const allowed = new Set([...block[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]));
   const missing = ANDROID_SCRIPTS.filter((name) => !allowed.has(name));

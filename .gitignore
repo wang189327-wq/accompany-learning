@@ -27,3 +27,6 @@ verification-results/
 delivery/
 .DS_Store
 Thumbs.db
+
+maintenance-results/
+cloud/maintenance-results/

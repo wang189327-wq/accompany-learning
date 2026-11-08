@@ -409,6 +409,7 @@ const Cloud = (() => {
     if (!config) e.preventDefault();
   });
   return {
+    storageScope: cacheKey,
     attachmentScope,
     attachmentCacheStats: attachments.stats,
     flushAttachmentCache: attachments.flush,

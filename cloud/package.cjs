@@ -75,6 +75,12 @@ async function packageAll() {
   await fs.mkdir(release, { recursive: true });
   const entries = [];
   for (const name of [
+    'errors.cjs',
+    'storage-monitor.cjs',
+    'static-assets.json',
+    'lifecycle-maintenance.cjs',
+    'lifecycle-example.xml',
+    'maintenance.cjs',
     'task-service.cjs',
     'assignment-groups.cjs',
     'assignment-groups.js',

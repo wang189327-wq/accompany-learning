@@ -3,7 +3,10 @@ const http = require('node:http'),
   fs = require('node:fs/promises'),
   path = require('node:path'),
   crypto = require('node:crypto');
-const { createService, AppError } = require('./core.cjs');
+const { createService } = require('./core.cjs');
+const { AppError, responseError } = require('./errors.cjs');
+const { createStorageMonitor } = require('./storage-monitor.cjs');
+const staticAssets = require('./static-assets.json');
 const publicRoot = path.join(__dirname, 'public');
 function readBody(req, limit) {
   return new Promise((resolve, reject) => {
@@ -30,6 +33,10 @@ function authorized(req, token) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 function createServer(options = {}) {
+  const monitor = createStorageMonitor({
+    thresholdGB: options.storageWarnGB ?? process.env.C9_STORAGE_WARN_GB ?? 1,
+    clock: options.clock || Date.now,
+  });
   const token = options.token || process.env.C9_ACCESS_TOKEN;
   if (!token || token.length < 32 || /^(GENERATE_|REPLACE_)/.test(token))
     throw Error('C9_ACCESS_TOKEN 至少需要 32 个字符，请配置自己的随机访问码，不要使用示例占位值');
@@ -65,6 +72,9 @@ function createServer(options = {}) {
           version: '1.6.0',
           build: 1,
           features: {
+            storageMonitor: true,
+            explicitErrors: true,
+            generatedAssets: true,
             assignmentGroups: true,
             optionalGroupFields: true,
             snapshotOptimized: true,
@@ -104,37 +114,7 @@ function createServer(options = {}) {
         return;
       }
       if (!p.startsWith('/api/')) {
-        const files = {
-          '/task-views.js': 'task-views.js',
-          '/library-views.js': 'library-views.js',
-          '/runtime-config.js': 'runtime-config.js',
-          '/': 'index.html',
-          '/index.html': 'index.html',
-          '/app.js': 'app.js',
-          '/model.js': 'model.js',
-          '/cloud-client.js': 'cloud-client.js',
-          '/startup-watch.js': 'startup-watch.js',
-          '/study-model.js': 'study-model.js',
-          '/study-ui.js': 'study-ui.js',
-          '/assignment-groups.js': 'assignment-groups.js',
-          '/assignment-groups-ui.js': 'assignment-groups-ui.js',
-          '/attachment-cache.js': 'attachment-cache.js',
-          '/content-cache.js': 'content-cache.js',
-          '/task-order.js': 'task-order.js',
-          '/image-zoom.js': 'image-zoom.js',
-          '/file-viewer.js': 'file-viewer.js',
-          '/zip-reader.js': 'zip-reader.js',
-          '/docx-reader.js': 'docx-reader.js',
-          '/my-model.js': 'my-model.js',
-          '/my-page.js': 'my-page.js',
-          '/font-settings.js': 'font-settings.js',
-          '/background-settings.js': 'background-settings.js',
-          '/submission-views.js': 'submission-views.js',
-          '/grade-flow.js': 'grade-flow.js',
-          '/pull-refresh.js': 'pull-refresh.js',
-          '/pdf.mjs': 'pdf.mjs',
-          '/pdf.worker.mjs': 'pdf.worker.mjs',
-        };
+        const files = { ...staticAssets };
         if (/^\/pdf-(cmaps|fonts|wasm)\/[a-zA-Z0-9_.-]+$/.test(p) && !p.includes('..'))
           files[p] = p.slice(1);
         if (req.method !== 'GET' || !files[p]) throw new AppError(404, '页面不存在');
@@ -172,7 +152,8 @@ function createServer(options = {}) {
         let body;
         try {
           body = JSON.parse((await readBody(req, 128 * 1024)).toString('utf8'));
-        } catch {
+        } catch (e) {
+          if (e instanceof AppError) throw e;
           throw new AppError(400, '点评请求内容无效');
         }
         if (!body || typeof body !== 'object' || Array.isArray(body))
@@ -188,6 +169,12 @@ function createServer(options = {}) {
         return;
       }
       if (!authorized(req, token)) throw new AppError(401, '访问码不正确，请重新配置连接');
+      if (req.method === 'GET' && p === '/api/storage/status') {
+        if (!['teacher', 'student'].includes(req.headers['x-c9-role']))
+          throw new AppError(403, '请选择老师或学生身份');
+        send(200, await monitor.status(() => provider(req).objects.bucketStats()));
+        return;
+      }
       const service = createService(
         ...(() => {
           const { store, objects } = provider(req);
@@ -328,16 +315,9 @@ function createServer(options = {}) {
       }
       throw new AppError(404, '接口不存在');
     } catch (e) {
-      const status =
-        e.status ||
-        (/请选择|请填写|任务类型无效|提交形式无效|本轮|上传|截止时间/.test(e.message) ? 400 : 500);
-      if (status >= 500) console.error('C9 request failed:', e.code || e.name);
-      send(status, {
-        error:
-          status >= 500 && !(e instanceof AppError)
-            ? '云端连接失败，请检查函数配置和访问权限'
-            : e.message,
-      });
+      const failure = responseError(e);
+      if (failure.status >= 500) console.error('C9 request failed:', e.code || e.name);
+      send(failure.status, failure.body);
     }
   });
 }
