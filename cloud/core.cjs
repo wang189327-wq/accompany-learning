@@ -3,12 +3,7 @@ const { randomUUID, createHash } = require('node:crypto');
 require('./model.js');
 const M = globalThis.TaskModel;
 const S = require('./study-model.js');
-class AppError extends Error {
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
+const { AppError, validate } = require('./errors.cjs');
 const fail = (status, message) => {
   throw new AppError(status, message);
 };
@@ -673,7 +668,7 @@ function createService(store, objects, clock = Date.now) {
       id(body.requestId);
       round(body.round);
       const t = await taskGet(body.taskId);
-      M.validateScore(body.selfScore);
+      validate(() => M.validateScore(body.selfScore));
       if (!Array.isArray(body.uploadIds)) fail(400, '上传列表无效');
       const uploads = [];
       for (const uploadId of body.uploadIds) {
@@ -722,13 +717,15 @@ function createService(store, objects, clock = Date.now) {
       const slot = refs[body.round] ? body.round + '~' + body.requestId : body.round;
       if (t.deletedAt || !t.enabled) fail(409, '作业已停用或删除，不能提交');
       if (t.revision !== body.taskRevision) fail(409, '作业已变更，请刷新后重新提交');
-      const record = M.submission(
-        t,
-        body.round,
-        clock(),
-        text,
-        t.format === 'file' ? files : images,
-        body.selfScore,
+      const record = validate(() =>
+        M.submission(
+          t,
+          body.round,
+          clock(),
+          text,
+          t.format === 'file' ? files : images,
+          body.selfScore,
+        ),
       );
       const payload = {
         taskId: t.id,
@@ -791,7 +788,7 @@ function createService(store, objects, clock = Date.now) {
     async grade(body, who) {
       role(who, 'teacher');
       round(body.round);
-      M.validateScore(body.score);
+      validate(() => M.validateScore(body.score));
       const t = await taskGet(body.taskId);
       const slot = body.recordKey || body.round;
       if (typeof slot !== 'string' || slot.length > 180 || !t._rounds?.[slot])

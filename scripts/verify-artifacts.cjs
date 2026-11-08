@@ -56,6 +56,12 @@ async function scan(zip, label) {
       zip = await loadAsync(bytes);
     if (name.includes('接口')) {
       for (const file of [
+        'errors.cjs',
+        'storage-monitor.cjs',
+        'lifecycle-maintenance.cjs',
+        'maintenance.cjs',
+        'static-assets.json',
+        'lifecycle-example.xml',
         'core.cjs',
         'task-service.cjs',
         'assignment-groups.cjs',

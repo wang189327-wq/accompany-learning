@@ -37,6 +37,10 @@ async function prepare() {
 
   const config = readConfig();
   await fs.writeFile(
+    path.join(android, 'src/cn/c9/studyplan/AssetList.java'),
+    require('./asset-manifest.cjs').javaSource(),
+  );
+  await fs.writeFile(
     path.join(android, 'src/cn/c9/studyplan/PublicConfig.java'),
     'package cn.c9.studyplan;\nfinal class PublicConfig { static final String UPDATE_MANIFEST_URL=' +
       JSON.stringify(config.updateManifestUrl) +

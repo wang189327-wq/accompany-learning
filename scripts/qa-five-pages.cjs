@@ -65,13 +65,13 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       ),
     );
     const native = await fs.readFile(
-      path.join(__dirname, '../android/src/cn/c9/studyplan/MainActivity.java'),
+      path.join(__dirname, '../android/src/cn/c9/studyplan/AssetList.java'),
       'utf8',
     );
     const allowed = new Set(
       [
         ...native
-          .match(/ASSETS\s*=\s*new HashSet<>\(Arrays\.asList\(([\s\S]*?)\)\)/)[1]
+          .match(/NAMES\s*=\s*new HashSet<>\(Arrays\.asList\(([\s\S]*?)\)\)/)[1]
           .matchAll(/"([^"]+)"/g),
       ].map((x) => x[1]),
     );

@@ -22,6 +22,7 @@ const BROWSER_SCRIPTS = [
   'my-page.js',
   'font-settings.js',
   'background-settings.js',
+  'storage-status.js',
   'submission-views.js',
   'grade-flow.js',
   'task-views.js',

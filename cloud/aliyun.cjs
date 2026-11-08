@@ -1,7 +1,7 @@
 'use strict';
 const TableStore = require('tablestore'),
   OSS = require('ali-oss');
-const { AppError } = require('./core.cjs');
+const { AppError } = require('./errors.cjs');
 function env(name) {
   const v = process.env[name];
   if (!v) throw new AppError(503, '云端配置缺少 ' + name);
@@ -150,6 +150,9 @@ function createAliyun(request) {
     return out;
   };
   const objects = {
+    async bucketStats() {
+      return (await oss.getBucketStat()).stat;
+    },
     async get(key) {
       try {
         return (await oss.get(key)).content;

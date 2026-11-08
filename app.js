@@ -1053,7 +1053,10 @@ function render() {
       .join('')}</nav>`,
   ].join('');
   if (tab === 'history') updateHistoryFilterStyles();
-  if (tab === 'mine') $('mySettingsSlot').append($('settingsPanel'));
+  if (tab === 'mine') {
+    $('mySettingsSlot').append($('settingsPanel'));
+    if (typeof StorageStatus !== 'undefined') StorageStatus.mount(role);
+  }
   publishAlignmentObserver.disconnect();
   if (tab === 'tasks' && $('newTask')) {
     const row = $('newTask').closest('.taskStats');

@@ -25,6 +25,12 @@ function createMemory() {
   store.putLibrary = async (v, e) => put(library, v.id, v, e, 'revision');
   store.listLibrary = async () => clone([...library.values()]);
   const objects = {
+    bucketStats: async () => ({
+      Storage: [...files.values()].reduce((n, b) => n + b.length, 0),
+      ObjectCount: files.size,
+      MultipartUploadCount: uploads.size,
+      LastModifiedTime: Math.floor(Date.now() / 1000),
+    }),
     get: async (key) => {
       if (!files.has(key)) throw new AppError(404, '文件不存在');
       return Buffer.from(files.get(key));

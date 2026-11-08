@@ -13,6 +13,11 @@
       "Effect": "Allow",
       "Action": ["oss:GetObject", "oss:PutObject"],
       "Resource": ["acs:oss:*:*:替换为实际Bucket名称/*"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["oss:GetBucketStat"],
+      "Resource": ["acs:oss:*:*:替换为实际Bucket名称"]
     }
   ]
 }

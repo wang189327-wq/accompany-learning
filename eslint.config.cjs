@@ -89,6 +89,7 @@ const MODULES = {
   ImageZoom: 'readonly',
   SubmissionViews: 'readonly',
   GradeFlow: 'readonly',
+  StorageStatus: 'readonly',
   C9AttachmentCache: 'readonly',
   C9ContentCache: 'readonly',
   C9Android: 'readonly',
@@ -201,7 +202,7 @@ const rules = {
       ignoreRestSiblings: true,
       // 各模块对象在本文件内只负责定义，由其他脚本或构建消费。
       varsIgnorePattern:
-        '^(TaskModel|TaskViews|LibraryViews|StudyUI|MyUI|TaskOrdering|AssignmentGroups|AssignmentGroupsUI|ImageZoom|SubmissionViews|GradeFlow|FileViewer|C9AttachmentCache|C9ContentCache|StudyModel|MyModel|Cloud|docx|AndroidPhotos|openDB|refresh|saveMyPreference|markMessagesRead|writeLibrary|writeTask|writeRecord|lastSyncViewStamp|localPhotoURL)$',
+        '^(TaskModel|TaskViews|LibraryViews|StudyUI|MyUI|TaskOrdering|AssignmentGroups|AssignmentGroupsUI|ImageZoom|SubmissionViews|GradeFlow|StorageStatus|FileViewer|C9AttachmentCache|C9ContentCache|StudyModel|MyModel|Cloud|docx|AndroidPhotos|openDB|refresh|saveMyPreference|markMessagesRead|writeLibrary|writeTask|writeRecord|lastSyncViewStamp|localPhotoURL)$',
     },
   ],
   'no-empty': ['error', { allowEmptyCatch: true }],
