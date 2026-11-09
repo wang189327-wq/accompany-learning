@@ -8,7 +8,7 @@
   <a href="https://wang189327-wq.github.io/accompany-learning/demo/"><img src="https://img.shields.io/badge/%E5%9C%A8%E7%BA%BF%E4%BD%93%E9%AA%8C-%E6%89%93%E5%BC%80%E6%BC%94%E7%A4%BA-2e7d32" alt="在线体验：打开演示" /></a>
 </p>
 
-<p align="center">面向互相信任的老师与学生两人的作业管理与学习记录工具，支持安卓手机、安卓平板和网页。任务、作业、学习资料与考试记录通过自己部署的云端同步。</p>
+<p>面向互相信任的老师与学生两人的作业管理与学习记录工具，支持安卓手机、安卓平板和网页。任务、作业、学习资料与考试记录通过自己部署的云端同步。</p>
 
 <p align="center">
   <img src="docs/images/demo.gif" width="360" alt="演示动图：作业清单上下滚动，打开每周循环作业查看提交内容与双方评分，再切到成绩分析" />
@@ -119,18 +119,26 @@ GitHub Actions 在 Windows/Linux 上运行源码检查、自动化测试和云�
 
 ## 目录
 
-| 路径                             | 作用                                       |
-| -------------------------------- | ------------------------------------------ |
-| 根目录 JS、HTML、CSS             | 界面、业务模型、预览及主题                 |
-| `cloud/`                         | 主接口、存储适配、快照优化、部署打包       |
-| `android/`                       | 安卓 WebView、文件保存、安装更新和桌面组件 |
-| `desktop-review/`                | 可选电脑 AI 点评服务                       |
-| `scripts/`                       | 配置、测试、演示、网页及更新文件生成       |
-| `docs/`                          | 当前部署与维护教程、界面截图、演示动图     |
-| `deploy/`                        | 网页部署模板                               |
-| `third-party-notices/`、`pdf-*/` | 第三方预览组件的授权及资源                 |
+```text
+accompany-learning/
+├── index.html / styles.css / app.js  页面入口、样式与状态协调
+├── *.js                              根目录界面模块、业务模型、预览与同步
+├── build/                            平台脚本清单、HTML 命名区域、网页与安卓资源构建
+├── cloud/                            主接口、存储适配、快照优化、部署打包
+├── android/                          安卓 WebView、文件保存、安装更新、桌面组件
+├── desktop-review/                   可选电脑 AI 点评服务
+├── demo/                             在线演示的启动脚本与生成页
+├── scripts/                          配置、测试、演示、网页与更新文件生成
+├── tests/                            自动化测试
+├── docs/                             部署与维护教程、架构说明、截图与演示动图
+├── deploy/                           网页部署模板
+├── pdf-cmaps/                        PDF 预览的字符映射表
+├── pdf-fonts/                        PDF 预览的字体资源
+├── pdf-wasm/                         PDF 预览的运行时
+└── third-party-notices/              第三方组件授权说明
+```
 
-新增的 `build/` 集中维护平台脚本清单、HTML 命名区域，以及网页和安卓资源的构建过程。
+根目录脚本数量较多，是因为浏览器按清单顺序直接加载经典脚本；新增文件请同时登记到构建清单。
 
 ## 第一次阅读源码
 
