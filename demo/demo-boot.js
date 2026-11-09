@@ -12,6 +12,10 @@
 
   const DB_NAME = 'two-person-task-assistant';
   const SEED_FLAG = 'c9-demo-seeded';
+  // 示例数据的版本。只要改了 buildSample 里的作业、备注或成绩，就必须把这里加一
+  // （v3 → v4 …）。否则老访客的 localStorage 还留着旧标记，IndexedDB 不会重写，
+  // 页面打开看到的仍是上一次的数据，看起来像演示没更新。
+  const SEED_VERSION = 'v4';
   const DAY = 86400000;
 
   function openDatabase() {
@@ -297,7 +301,7 @@
   (async () => {
     try {
       const db = await openDatabase();
-      if (localStorage.getItem(SEED_FLAG) !== 'v3') {
+      if (localStorage.getItem(SEED_FLAG) !== SEED_VERSION) {
         const { tasks, records, exams } = buildSample(Date.now());
         await clear(db, 'tasks');
         await clear(db, 'records');
@@ -305,7 +309,7 @@
         await write(db, 'tasks', tasks);
         await write(db, 'records', records);
         await write(db, 'library', exams);
-        localStorage.setItem(SEED_FLAG, 'v3');
+        localStorage.setItem(SEED_FLAG, SEED_VERSION);
       }
       db.close();
       localStorage.setItem('c9-last-role', localStorage.getItem('c9-last-role') || 'student');
