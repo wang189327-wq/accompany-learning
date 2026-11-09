@@ -26,8 +26,8 @@ TARGET = os.path.join(HERE, "res", "drawable-nodpi", "launcher_artwork.png")
 PREVIEW = os.path.join(HERE, "artwork", "icon-preview.png")
 
 # 原图占 108dp 图层的比例。系统只显示中间 72dp（66.7%），剩下的是留白与动画区。
-# 0.62 lets the artwork fill about 76% of the visible viewport, with room around the book.
-SHARE = 0.62
+# 原图覆盖中央72dp可视区域；外围复制边缘像素，留给启动器动画使用。
+SHARE = 2 / 3
 
 
 def pad_to_adaptive(src):

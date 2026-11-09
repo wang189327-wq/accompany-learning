@@ -11,7 +11,7 @@ function record(apkPath) {
   const origin = fs.existsSync(originPath) ? JSON.parse(fs.readFileSync(originPath, 'utf8')) : null;
   const sourceCommit =
     origin?.sourceCommit ||
-    execFileSync('git', ['rev-parse', 'HEAD'], {
+    execFileSync('git', ['-c', 'safe.directory=' + root, 'rev-parse', 'HEAD'], {
       cwd: root,
       encoding: 'utf8',
       windowsHide: true,
