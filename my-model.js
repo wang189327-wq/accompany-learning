@@ -1,13 +1,6 @@
 (function (scope) {
   'use strict';
-  const HEADERS = [
-    '年份',
-    '学校',
-    '45中橡树湾录取分数线',
-    '年级排名',
-    '合肥市录取分数线',
-    '合肥市排名',
-  ];
+  const HEADERS = ['年份', '学校', '学校录取分数线', '年级排名', '全市录取分数线', '全市排名'];
   const GOAL_EXTRAS = ['体育', '实验', '总分'],
     LIGHT_GREEN = '#e5f2e5';
   const goalSubjects = (subjects) => [...new Set([...subjects, ...GOAL_EXTRAS])];

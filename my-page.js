@@ -184,7 +184,7 @@ const MyUI = (() => {
           );
         })
         .join('') +
-      '</tbody></table></div></section><section class="card full"><div class="pageHeading"><h2>合肥高中录取分数线</h2><button data-my="table">编辑表格</button></div>' +
+      '</tbody></table></div></section><section class="card full"><div class="pageHeading"><h2>高中录取分数线</h2><button data-my="table">编辑表格</button></div>' +
       admissions(s.table) +
       '</section><div id="mySettingsSlot" class="full"></div></div>'
     );
