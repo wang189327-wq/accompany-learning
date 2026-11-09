@@ -1,4 +1,4 @@
-package cn.c9.studyplan;
+package app.accompany.learning;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -52,7 +52,7 @@ public final class UpdateManager {
             try(InputStream in=c.getInputStream();ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] buffer=new byte[4096];int n;while((n=in.read(buffer))!=-1){if(out.size()+n>65536)throw new Exception("更新信息无效");out.write(buffer,0,n);}bytes=out.toByteArray();}finally{c.disconnect();}
             JSONObject value=new JSONObject(new String(bytes,java.nio.charset.StandardCharsets.UTF_8));
             URL url=new URL(value.getString("url"));long size=value.getLong("bytes"),code=value.getLong("versionCode");
-            if(!"https".equals(url.getProtocol())||!new URL(MANIFEST_URL).getHost().equals(url.getHost())||url.getPort()!=-1||url.getUserInfo()!=null||url.getQuery()!=null||url.getRef()!=null||!url.getPath().matches("/updates/banxue-record-v[0-9.]+\\.apk")||!value.getString("sha256").matches("[a-f0-9]{64}")||size<1||size>100*1024*1024||code<1||!value.getString("versionName").matches("[0-9.]+"))throw new Exception("更新信息无效");
+            if(!"https".equals(url.getProtocol())||!new URL(MANIFEST_URL).getHost().equals(url.getHost())||url.getPort()!=-1||url.getUserInfo()!=null||url.getQuery()!=null||url.getRef()!=null||!url.getPath().matches("/updates/accompany-learning-v[0-9.]+\\.apk")||!value.getString("sha256").matches("[a-f0-9]{64}")||size<1||size>100*1024*1024||code<1||!value.getString("versionName").matches("[0-9.]+"))throw new Exception("更新信息无效");
             synchronized(this){latest=value;phase=code>version(installed())?"available":"current";}
         }catch(Exception e){fail(e);}});
     }

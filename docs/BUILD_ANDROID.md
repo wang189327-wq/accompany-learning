@@ -7,7 +7,7 @@
 3. 执行`powershell -NoProfile -ExecutionPolicy Bypass -File android/setup-tools.ps1`。脚本从Google和Microsoft官方地址下载并校验工具，放在被忽略的`android/tools/`，不修改系统PATH。下载失败时按具体错误检查网络和官方下载地址。
 4. 执行`powershell -NoProfile -ExecutionPolicy Bypass -File android/build-apk.ps1`。
 
-输出为`android/release/伴学记录-v1.0.apk`及SHA256.txt。构建时会先生成云端网页和PublicConfig.java，后者包含公开的地址配置，不包含访问码。
+输出为`android/release/accompany-learning-v1.0.apk`及SHA256.txt。构建时会先生成云端网页和PublicConfig.java，后者包含公开的地址配置，不包含访问码。
 
 ## 签名
 
@@ -20,13 +20,13 @@ $env:C9_EXISTING_SIGNING_ROOT='E:\my-private-signing'
 powershell -NoProfile -ExecutionPolicy Bypass -File android/build-apk.ps1
 ```
 
-目录中需要脚本约定的`c9-release.p12`、`credentials.json`及`c9release`别名。保留这些内部名称是兼容选择。仓库不提供作者原私钥，其他人无法用新签名更新作者已安装的APK。
+目录中需要脚本约定的`accompany-release.p12`、`credentials.json`及`accompanyrelease`别名。保留这些内部名称是兼容选择。仓库不提供作者原私钥，其他人无法用新签名更新作者已安装的APK。
 
 可用`C9_BUILD_TOOLS_ROOT`指定自己的工具根目录，该目录包含jdk、build-tools、platform三个子目录。不要将特定电脑路径写入源码。
 
 ## 自行派生应用
 
-当前包名保留`cn.c9.studyplan`及对应provider/Java路径，显示名已改为“伴学记录”。若需要与其他派生版本同时安装，应同步修改manifest、Java包名和provider authority，并重跑测试；不要只改一个包名字符串。
+当前包名为`app.accompany.learning`及对应provider/Java路径，显示名已改为“Accompany Learning”。若需要与其他派生版本同时安装，应同步修改manifest、Java包名和provider authority，并重跑测试；不要只改一个包名字符串。
 
 最低安卓8（API26），目标API35。可在支持APK的设备上测试；不同HarmonyOS/设备环境需要实机确认。APK构建成功不等于所有系统安装、相册和桌面组件均已验收。
 

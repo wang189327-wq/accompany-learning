@@ -25,9 +25,9 @@ test('README/部署文档的本地链接均存在，部署包及变量名称与�
   const doc = fs.readFileSync(path.join(root, 'docs/DEPLOY_ALIYUN.md'), 'utf8'),
     pack = fs.readFileSync(path.join(root, 'cloud/package.cjs'), 'utf8');
   for (const name of [
-    '伴学记录云端接口部署包.zip',
-    '伴学记录云端界面.zip',
-    '伴学记录自动备份函数.zip',
+    'Accompany Learning云端接口部署包.zip',
+    'Accompany Learning云端界面.zip',
+    'Accompany Learning自动备份函数.zip',
   ])
     assert.ok(doc.includes(name) && pack.includes(name), name);
   const example = JSON.parse(

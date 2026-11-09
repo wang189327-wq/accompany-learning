@@ -68,7 +68,7 @@ function createServer(options = {}) {
       if (p === '/health') {
         send(200, {
           ok: true,
-          service: '伴学记录',
+          service: 'Accompany Learning',
           version: '1.6.0',
           build: 1,
           features: {

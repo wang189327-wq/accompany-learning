@@ -6,7 +6,7 @@ const M = TaskModel,
   $ = (id) => document.getElementById(id);
 /* @runtime-begin testmode */
 const TEST_MODE = new URLSearchParams(location.search).get('test') === '1';
-const APP_TITLE = '伴学记录 · 本机测试版';
+const APP_TITLE = 'Accompany Learning · 本机测试版';
 /* @runtime-end testmode */
 let searchName = '',
   searchSubject = '',
@@ -908,7 +908,7 @@ function render() {
   document.querySelector('header').classList.toggle('hidden', !role || tab !== 'mine');
   $('switchRole').classList.toggle('hidden', !role);
   $('appSubtitle').textContent = motto;
-  document.title = '伴学记录' + (TEST_MODE ? ' · 本地测试版' : '');
+  document.title = 'Accompany Learning' + (TEST_MODE ? ' · 本地测试版' : '');
   if (!role) {
     $('app').innerHTML =
       '<div class="welcome"><h1>' +
@@ -1364,7 +1364,7 @@ async function exportBackup() {
     ],
     { type: 'application/json' },
   );
-  download(blob, '伴学记录备份-' + M.input(Date.now()).replace(/[:T]/g, '-') + '.json');
+  download(blob, 'Accompany Learning备份-' + M.input(Date.now()).replace(/[:T]/g, '-') + '.json');
 }
 function download(blob, name) {
   if (typeof AndroidPhotos !== 'undefined') return AndroidPhotos.save(blob, name);

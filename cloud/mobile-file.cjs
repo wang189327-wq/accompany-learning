@@ -16,7 +16,7 @@ async function makeMobile() {
   }
   if (/<script\b[^>]*\bsrc=/i.test(html)) throw Error('手机文件仍有外部脚本依赖');
   await fs.mkdir(path.join(__dirname, 'release'), { recursive: true });
-  await fs.writeFile(path.join(__dirname, 'release', '伴学记录手机测试版.html'), html);
+  await fs.writeFile(path.join(__dirname, 'release', 'Accompany Learning手机测试版.html'), html);
   return html;
 }
 if (require.main === module)

@@ -39,7 +39,10 @@ function derive(destination, configPath) {
       if (!['project-info.json', 'scripts/derive-personal.cjs'].includes(rel))
         text = text.replaceAll(info.displayName, info.personalDisplayName);
       if (
-        ['android/src/cn/c9/studyplan/UpdateManager.java', 'scripts/make-update.cjs'].includes(rel)
+        [
+          'android/src/app/accompany/learning/UpdateManager.java',
+          'scripts/make-update.cjs',
+        ].includes(rel)
       )
         text = text.replaceAll(info.publicUpdatePrefix, info.personalUpdatePrefix);
       bytes = Buffer.from(text);

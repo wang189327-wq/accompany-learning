@@ -61,11 +61,12 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   if (apkMode) {
     const zip = await require('../zip-reader.js').loadAsync(
       await fs.readFile(
-        process.env.C9_QA_APK_PATH || path.join(__dirname, '../android/release/伴学记录-v1.0.apk'),
+        process.env.C9_QA_APK_PATH ||
+          path.join(__dirname, '../android/release/accompany-learning-v1.0.apk'),
       ),
     );
     const native = await fs.readFile(
-      path.join(__dirname, '../android/src/cn/c9/studyplan/AssetList.java'),
+      path.join(__dirname, '../android/src/app/accompany/learning/AssetList.java'),
       'utf8',
     );
     const allowed = new Set(

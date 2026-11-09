@@ -1,8 +1,8 @@
 {
-  "name": "banxue-record-cloud",
+  "name": "accompany-learning-cloud",
   "version": "1.0.0",
   "private": true,
-  "description": "伴学记录阿里云函数计算后端",
+  "description": "Accompany Learning阿里云函数计算后端",
   "engines": {
     "node": ">=20"
   },

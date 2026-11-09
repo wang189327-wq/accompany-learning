@@ -1,4 +1,4 @@
-package cn.c9.studyplan;
+package app.accompany.learning;
 import java.time.LocalDate;
 import java.time.Instant;
 import java.time.ZoneId;

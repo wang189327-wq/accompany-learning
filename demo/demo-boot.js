@@ -250,7 +250,7 @@
   function notice() {
     // app.js 每次重绘都会把标题改回正式名，这里盯着 <title> 改回来。
     const title = document.querySelector('title');
-    const wanted = '伴学记录 · 交互演示';
+    const wanted = 'Accompany Learning · 交互演示';
     new MutationObserver(() => {
       if (title.textContent !== wanted) title.textContent = wanted;
     }).observe(title, { childList: true, characterData: true, subtree: true });

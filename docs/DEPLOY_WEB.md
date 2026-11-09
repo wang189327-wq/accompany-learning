@@ -23,7 +23,7 @@ npm run build:web
 
 也可关联GitHub仓库：构建命令`npm ci && npm ci --prefix cloud --ignore-scripts && npm run build:web`，发布目录`cloud/public`。在Netlify构建环境设置`C9_API_ENDPOINT`；它是接口地址，不是访问码。不要把访问码设成前端构建变量。
 
-发布后确认根地址显示“伴学记录”，`/health`代理正常。两台设备使用同一网站和访问码即可同步。仅上传源码中的index.html会缺脚本，必须上传构建后的完整目录。
+发布后确认根地址显示“Accompany Learning”，`/health`代理正常。两台设备使用同一网站和访问码即可同步。仅上传源码中的index.html会缺脚本，必须上传构建后的完整目录。
 
 ## 其他静态托管
 
@@ -32,12 +32,12 @@ npm run build:web
 ## 安卓App内更新
 
 1. 使用自己的签名构建APK；构建前配置`updateManifestUrl`。未配置时“检查更新”会提示未配置，不连接作者站点。
-2. 更新清单和APK必须HTTPS同主机、默认端口，无凭据/查询/片段。APK路径为`/updates/banxue-record-v版本号.apk`；不接受跳转到第三方下载源。
+2. 更新清单和APK必须HTTPS同主机、默认端口，无凭据/查询/片段。APK路径为`/updates/accompany-learning-v版本号.apk`；不接受跳转到第三方下载源。
 3. 每次实际升级提高`android/AndroidManifest.xml`中的versionCode，保持原包名和签名；versionName为显示号。当前公开源码为1.0、版本码1，后续升级应递增版本码。
 4. 构建后生成更新文件，例如：
 
 ```sh
-node scripts/make-update.cjs android/release/伴学记录-v1.0.apk https://study.example.com 1.0 1
+node scripts/make-update.cjs android/release/accompany-learning-v1.0.apk https://study.example.com 1.0 1
 ```
 
 此命令按实际APK计算大小和SHA-256，写入`cloud/public/updates/latest.json`及对应APK。命令参数必须与APK的实际版本一致；安装前原生端还会再次检查。

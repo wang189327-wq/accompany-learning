@@ -1,4 +1,4 @@
-package cn.c9.studyplan;
+package app.accompany.learning;
 import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.content.SharedPreferences;

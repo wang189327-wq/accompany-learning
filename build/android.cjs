@@ -37,12 +37,12 @@ async function prepare() {
 
   const config = readConfig();
   await fs.writeFile(
-    path.join(android, 'src/cn/c9/studyplan/AssetList.java'),
+    path.join(android, 'src/app/accompany/learning/AssetList.java'),
     require('./asset-manifest.cjs').javaSource(),
   );
   await fs.writeFile(
-    path.join(android, 'src/cn/c9/studyplan/PublicConfig.java'),
-    'package cn.c9.studyplan;\nfinal class PublicConfig { static final String UPDATE_MANIFEST_URL=' +
+    path.join(android, 'src/app/accompany/learning/PublicConfig.java'),
+    'package app.accompany.learning;\nfinal class PublicConfig { static final String UPDATE_MANIFEST_URL=' +
       JSON.stringify(config.updateManifestUrl) +
       '; }\n',
   );

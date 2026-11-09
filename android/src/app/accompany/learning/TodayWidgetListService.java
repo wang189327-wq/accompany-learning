@@ -1,4 +1,4 @@
-package cn.c9.studyplan;
+package app.accompany.learning;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;

@@ -22,7 +22,9 @@ async function scan(zip, label) {
   return count;
 }
 (async () => {
-  const apkBytes = await fs.readFile(path.join(root, 'android/release/伴学记录-v1.0.apk')),
+  const apkBytes = await fs.readFile(
+      path.join(root, 'android/release/accompany-learning-v1.0.apk'),
+    ),
     apk = await loadAsync(apkBytes),
     checks = {};
   checks.apkTextAssetsScanned = await scan(apk, 'APK');
@@ -48,9 +50,9 @@ async function scan(zip, label) {
   checks.apkAssetsVerified = assets;
   const packages = [];
   for (const name of [
-    '伴学记录云端接口部署包.zip',
-    '伴学记录云端界面.zip',
-    '伴学记录自动备份函数.zip',
+    'Accompany Learning云端接口部署包.zip',
+    'Accompany Learning云端界面.zip',
+    'Accompany Learning自动备份函数.zip',
   ]) {
     const bytes = await fs.readFile(path.join(root, 'cloud/release', name)),
       zip = await loadAsync(bytes);
@@ -84,9 +86,9 @@ async function scan(zip, label) {
   }
   const result = {
     passed: true,
-    name: '伴学记录',
+    name: 'Accompany Learning',
     version: '1.0',
-    versionCode: 1,
+    versionCode: 7,
     cloudBuild: 1,
     apk: { bytes: apkBytes.length, sha256: hash(apkBytes) },
     checks,

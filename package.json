@@ -1,8 +1,8 @@
 {
-  "name": "banxue-record",
+  "name": "accompany-learning",
   "version": "1.0.0",
   "private": true,
-  "description": "伴学记录：双人学习任务、资料、成绩与可选AI点评",
+  "description": "Accompany Learning：双人学习任务、资料、成绩与可选AI点评",
   "license": "MIT",
   "engines": {
     "node": ">=22"

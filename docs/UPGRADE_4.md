@@ -12,7 +12,7 @@
 ## 后台升级顺序
 
 1. 使用原接口的备份能力做好云端备份，保留原函数代码与环境变量。不删除原任务表、记录表或OSS文件。
-2. 按[阿里云部署教程](DEPLOY_ALIYUN.md)构建并上传新的“伴学记录云端接口部署包.zip”到原函数。ZIP根目录应含`server.cjs`、`core.cjs`、`task-service.cjs`、`assignment-groups.cjs`、`assignment-groups.js`及原有依赖。
+2. 按[阿里云部署教程](DEPLOY_ALIYUN.md)构建并上传新的“Accompany Learning云端接口部署包.zip”到原函数。ZIP根目录应含`server.cjs`、`core.cjs`、`task-service.cjs`、`assignment-groups.cjs`、`assignment-groups.js`及原有依赖。
 3. 保留原环境变量、执行角色、OSS和Tablestore，启动配置不变；无需新增表、权限或密钥。
 4. 访问原`/health`，确认`build:1`、`features.assignmentGroups:true`及`features.optionalGroupFields:true`。接口协议仍是`1.6.0`，不是安卓显示版本。
 5. 上传1.0网页并使用1.0/1 APK。需要App内更新时按[网页与更新教程](DEPLOY_WEB.md)放置对应更新清单和APK。

@@ -1,4 +1,4 @@
-package cn.c9.studyplan;
+package app.accompany.learning;
 
 import android.app.PendingIntent;
 import android.app.job.JobInfo;
@@ -18,9 +18,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 public final class TodayWidget extends AppWidgetProvider {
-    static final String PREF="c9-today-widget",REFRESH="cn.c9.studyplan.REFRESH_TODAY";
-    static final String DATE_MENU="cn.c9.studyplan.WIDGET_DATE_MENU",DATE_PICK="cn.c9.studyplan.WIDGET_DATE_PICK";
-    static final String DAY_RESET="cn.c9.studyplan.WIDGET_NEW_DAY";
+    static final String PREF="c9-today-widget",REFRESH="app.accompany.learning.REFRESH_TODAY";
+    static final String DATE_MENU="app.accompany.learning.WIDGET_DATE_MENU",DATE_PICK="app.accompany.learning.WIDGET_DATE_PICK";
+    static final String DAY_RESET="app.accompany.learning.WIDGET_NEW_DAY";
     static SharedPreferences prefs(Context c){return c.getSharedPreferences(PREF,Context.MODE_PRIVATE);}
     static int resource(Context c,String kind,String name){return c.getResources().getIdentifier(name,kind,c.getPackageName());}
     static void configure(Context c,String endpoint,String token,String role){

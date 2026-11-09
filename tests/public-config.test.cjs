@@ -35,7 +35,7 @@ test('公开安卓构建不覆盖连接配置，未配置更新有提示且保�
   const root = path.join(__dirname, '..'),
     android = fs.readFileSync(path.join(root, 'android/android-client.js'), 'utf8'),
     native = fs.readFileSync(
-      path.join(root, 'android/src/cn/c9/studyplan/UpdateManager.java'),
+      path.join(root, 'android/src/app/accompany/learning/UpdateManager.java'),
       'utf8',
     );
   assert.ok(!android.includes('globalThis.C9_DEFAULT_ENDPOINT='));
@@ -43,7 +43,7 @@ test('公开安卓构建不覆盖连接配置，未配置更新有提示且保�
     'MANIFEST_URL.isEmpty()',
     '尚未配置更新地址',
     'new URL(MANIFEST_URL).getHost()',
-    '/updates/banxue-record-v',
+    '/updates/accompany-learning-v',
     'SHA-256',
     'version(next)<=version(current)',
     'Arrays.equals(a[0].toByteArray(),b[0].toByteArray())',

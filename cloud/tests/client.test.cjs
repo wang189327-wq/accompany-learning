@@ -165,7 +165,10 @@ test('手机本地预览不允许保存设置时，仍可成功连接；首次�
   assert.equal((await Cloud.snapshot()).tasks.length, 0);
 });
 test('手机单文件无外部脚本，内置脚本语法完整且不包含访问码', () => {
-  const file = fs.readFileSync(path.join(__dirname, '../release/伴学记录手机测试版.html'), 'utf8');
+  const file = fs.readFileSync(
+    path.join(__dirname, '../release/Accompany Learning手机测试版.html'),
+    'utf8',
+  );
   assert.ok(!/<script\b[^>]*\bsrc=/i.test(file));
   const scripts = [...file.matchAll(/<script>([\s\S]*?)<\/script>/g)];
   assert.ok(scripts.length >= 7);

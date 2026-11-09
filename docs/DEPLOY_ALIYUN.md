@@ -17,11 +17,11 @@ npm run package:cloud
 
 在`cloud/release/`得到：
 
-| 文件                         | 用途                                                      |
-| ---------------------------- | --------------------------------------------------------- |
-| `伴学记录云端接口部署包.zip` | 主Web函数，含SDK与网页资源                                |
-| `伴学记录云端界面.zip`       | 独立网页资源；可作为同域静态界面，或按网页教程配置Netlify |
-| `伴学记录自动备份函数.zip`   | 可选Node.js定时备份函数                                   |
+| 文件                                   | 用途                                                      |
+| -------------------------------------- | --------------------------------------------------------- |
+| `Accompany Learning云端接口部署包.zip` | 主Web函数，含SDK与网页资源                                |
+| `Accompany Learning云端界面.zip`       | 独立网页资源；可作为同域静态界面，或按网页教程配置Netlify |
+| `Accompany Learning自动备份函数.zip`   | 可选Node.js定时备份函数                                   |
 
 上传主ZIP时，根目录应直接包含`server.cjs`、`core.cjs`、`extras.cjs`、`aliyun.cjs`、`node_modules/`、`public/`，不应额外包一层仓库目录。不要上传`.git`或签名。
 
@@ -61,7 +61,7 @@ npm run package:cloud
 
 | 项目     | 建议值                                                              |
 | -------- | ------------------------------------------------------------------- |
-| 名称     | `banxue-record-api`，可自行命名                                     |
+| 名称     | `accompany-learning-api`，可自行命名                                |
 | 代码     | 主接口ZIP                                                           |
 | 启动命令 | `/var/fc/lang/nodejs22/bin/node server.cjs`，须与实际运行时路径一致 |
 | 监听端口 | 9000，代码支持平台`FC_CUSTOM_LISTEN_PORT`                           |
@@ -104,7 +104,7 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 浏览器访问`https://自己的接口地址/health`，应有：
 
 ```json
-{"ok":true,"service":"伴学记录","version":"1.6.0","build":56,"features":{"snapshotOptimized":true}}
+{"ok":true,"service":"Accompany Learning","version":"1.6.0","build":56,"features":{"snapshotOptimized":true}}
 ```
 
 实际结果还有其他features和时间字段。`version`是后端协议号，与安卓显示4.0不同。健康接口不读写存储，不能单凭ok证明存储权限正常；在App“连接并保存”时会进一步校验两张表和OSS。
@@ -123,7 +123,7 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 
 | 项目     | 值                                                                |
 | -------- | ----------------------------------------------------------------- |
-| 函数名   | `banxue-record-backup`                                            |
+| 函数名   | `accompany-learning-backup`                                       |
 | 运行时   | Node.js20或更新的受支持Node事件运行时，需支持fetch                |
 | 代码     | 自动备份ZIP                                                       |
 | 入口     | `index.handler`                                                   |

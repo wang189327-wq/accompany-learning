@@ -1,4 +1,4 @@
-package cn.c9.studyplan;
+package app.accompany.learning;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;

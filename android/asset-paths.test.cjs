@@ -8,7 +8,7 @@ test('APK nested PDF assets use Android slash paths and preserve all font/CMap/w
     manifest = await fs.readFile(path.join(__dirname, 'AndroidManifest.xml'), 'utf8'),
     version = manifest.match(/android:versionName="([0-9.]+)"/)[1],
     apk = await zip.loadAsync(
-      await fs.readFile(path.join(__dirname, 'release/伴学记录-v' + version + '.apk')),
+      await fs.readFile(path.join(__dirname, 'release/accompany-learning-v' + version + '.apk')),
     );
   const assets = Object.keys(apk.files).filter((n) => n.startsWith('assets/'));
   assert.equal(

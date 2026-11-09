@@ -8,7 +8,7 @@
 | 自动备份函数 | 可选           | `cloud/backup-handler.cjs`打包成`index.js`，handler为`index.handler` | 阿里云FC事件函数+定时触发器       |
 | 数据存储     | 必需           | `cloud/aliyun.cjs`                                                   | 自己的OSS Bucket+Tablestore两张表 |
 | 网页         | 网页使用时需要 | `cloud/build.cjs`或`scripts/build-web.cjs`生成`cloud/public`         | FC同域/自己的静态托管             |
-| 安卓App      | 安卓使用时需要 | `android/src/cn/c9/studyplan/MainActivity.java`                      | 手机/平板                         |
+| 安卓App      | 安卓使用时需要 | `android/src/app/accompany/learning/MainActivity.java`               | 手机/平板                         |
 | 电脑AI点评   | 可选           | `desktop-review/worker.cjs`                                          | 自己的电脑及本机OpenClaw          |
 
 不要为每个API单独创建一个FC函数。以下API均由同一个主接口函数处理。

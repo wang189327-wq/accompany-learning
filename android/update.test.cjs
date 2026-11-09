@@ -105,11 +105,11 @@ test('校验或网络失败不请求安装，允许重试', async () => {
 });
 test('更新原生端限制固定HTTPS来源，检查SHA、包名、递增版本和原签名，使用只读私有文件URI', () => {
   const native = fs.readFileSync(
-      path.join(__dirname, 'src/cn/c9/studyplan/UpdateManager.java'),
+      path.join(__dirname, 'src/app/accompany/learning/UpdateManager.java'),
       'utf8',
     ),
     provider = fs.readFileSync(
-      path.join(__dirname, 'src/cn/c9/studyplan/UpdateProvider.java'),
+      path.join(__dirname, 'src/app/accompany/learning/UpdateProvider.java'),
       'utf8',
     );
   for (const text of [

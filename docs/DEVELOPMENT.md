@@ -22,7 +22,7 @@
 | 附件解析缓存                 | `content-cache.js`、`file-viewer.js`                                       | 摘要命中、Word复用、PDF释放、容量淘汰       |
 | AI点评                       | `cloud/ai-review.cjs`、`review-batches.cjs`、`desktop-review/worker.cjs`   | 在线/领取/失败/退出App、去重与回传          |
 | 安卓保存、更新               | `android/android-client.js`、原生`MainActivity.java`、`UpdateManager.java` | 明确点击、失败提示、签名和下载校验          |
-| 桌面组件                     | `android/src/cn/c9/studyplan/`的Widget类                                   | 日期、滚动、刷新、备注与停用任务            |
+| 桌面组件                     | `android/src/app/accompany/learning/`的Widget类                            | 日期、滚动、刷新、备注与停用任务            |
 | 样式                         | `styles.css`，仅安卓差异在`android/styles.css`                             | 手机/平板、横竖屏、四字号和五背景           |
 
 ## 增加或移动文件

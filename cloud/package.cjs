@@ -102,9 +102,9 @@ async function packageAll() {
     ...(await collect(path.join(__dirname, 'public'), 'public/')),
   );
   const files = {
-    '伴学记录云端接口部署包.zip': zip(entries),
-    '伴学记录云端界面.zip': zip(await collect(path.join(__dirname, 'public'))),
-    '伴学记录自动备份函数.zip': zip([
+    'Accompany Learning云端接口部署包.zip': zip(entries),
+    'Accompany Learning云端界面.zip': zip(await collect(path.join(__dirname, 'public'))),
+    'Accompany Learning自动备份函数.zip': zip([
       { name: 'index.js', bytes: await fs.readFile(path.join(__dirname, 'backup-handler.cjs')) },
     ]),
   };

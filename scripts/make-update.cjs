@@ -28,7 +28,7 @@ const fs = require('node:fs/promises'),
   const bytes = await fs.readFile(file),
     out = path.join(__dirname, '../cloud/public/updates');
   await fs.mkdir(out, { recursive: true });
-  const name = 'banxue-record-v' + versionName + '.apk';
+  const name = 'accompany-learning-v' + versionName + '.apk';
   await fs.writeFile(path.join(out, name), bytes);
   const value = {
     versionName,
@@ -36,7 +36,7 @@ const fs = require('node:fs/promises'),
     url: uri.origin + '/updates/' + name,
     bytes: bytes.length,
     sha256: createHash('sha256').update(bytes).digest('hex'),
-    notes: '伴学记录更新',
+    notes: 'Accompany Learning更新',
   };
   await fs.writeFile(path.join(out, 'latest.json'), JSON.stringify(value, null, 2) + '\n');
   console.log(JSON.stringify(value));

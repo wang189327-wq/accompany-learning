@@ -1,5 +1,5 @@
 // Generated from build/assets.cjs; do not edit.
-package cn.c9.studyplan;
+package app.accompany.learning;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;

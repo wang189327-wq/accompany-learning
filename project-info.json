@@ -1,9 +1,9 @@
 {
   "repository": "https://github.com/wang189327-wq/accompany-learning",
   "repositoryName": "accompany-learning",
-  "displayName": "伴学记录",
+  "displayName": "Accompany Learning",
   "personalDisplayName": "C9学习计划",
-  "applicationId": "cn.c9.studyplan",
-  "publicUpdatePrefix": "banxue-record-v",
+  "applicationId": "app.accompany.learning",
+  "publicUpdatePrefix": "accompany-learning-v",
   "personalUpdatePrefix": "c9-study-plan-v"
 }

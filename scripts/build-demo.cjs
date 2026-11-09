@@ -35,7 +35,7 @@ function build() {
     '$1<script src="./demo-boot.js"></script>\n$1<!-- @build:scripts:end -->',
   );
 
-  html = html.replace(/<title>[^<]*<\/title>/, '<title>伴学记录 · 交互演示</title>');
+  html = html.replace(/<title>[^<]*<\/title>/, '<title>Accompany Learning · 交互演示</title>');
   html = html.replace(
     /(<meta name="viewport" content="[^"]*" \/>)/,
     '$1\n    <meta name="robots" content="noindex" />',

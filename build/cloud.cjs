@@ -50,7 +50,7 @@ async function build() {
     'loading',
     '正在启动学习计划… 如果此提示一直不变且按钮没有反应，说明界面脚本未加载，请使用完整界面文件或手机测试版。',
   );
-  html = html.replace(/<title>[^<]*<\/title>/, '<title>伴学记录</title>');
+  html = html.replace(/<title>[^<]*<\/title>/, '<title>Accompany Learning</title>');
   await fs.writeFile(path.join(out, 'index.html'), html);
 }
 

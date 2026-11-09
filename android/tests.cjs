@@ -113,11 +113,11 @@ test('APK assets start locally and await native album save errors', async () => 
   const names = [...html.matchAll(/<script src="([^"]+)"/g)].map((x) => x[1]);
   assert(names.includes('android-client.js'));
   const native = await fs.readFile(
-    path.join(__dirname, 'src/cn/c9/studyplan/MainActivity.java'),
+    path.join(__dirname, 'src/app/accompany/learning/MainActivity.java'),
     'utf8',
   );
   const generatedAssets = await fs.readFile(
-    path.join(__dirname, 'src/cn/c9/studyplan/AssetList.java'),
+    path.join(__dirname, 'src/app/accompany/learning/AssetList.java'),
     'utf8',
   );
   assert.ok(native.includes('ASSETS = AssetList.NAMES'));

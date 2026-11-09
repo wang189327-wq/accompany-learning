@@ -1,4 +1,4 @@
-package cn.c9.studyplan;
+package app.accompany.learning;
 
 import android.Manifest;
 import android.app.Activity;
@@ -119,7 +119,7 @@ public final class MainActivity extends Activity {
                 return true;
             }
             @Override public boolean onJsConfirm(WebView view,String url,String message,JsResult result) {
-                new AlertDialog.Builder(MainActivity.this).setTitle("伴学记录").setMessage(message)
+                new AlertDialog.Builder(MainActivity.this).setTitle("Accompany Learning").setMessage(message)
                     .setPositiveButton("确定",(dialog,which)->result.confirm())
                     .setNegativeButton("取消",(dialog,which)->result.cancel())
                     .setOnCancelListener(dialog->result.cancel()).show();
@@ -214,13 +214,13 @@ public final class MainActivity extends Activity {
                     ContentValues values=new ContentValues();
                     values.put(MediaStore.Images.Media.DISPLAY_NAME,name);
                     values.put(MediaStore.Images.Media.MIME_TYPE,type);
-                    values.put(MediaStore.Images.Media.RELATIVE_PATH,Environment.DIRECTORY_PICTURES+"/伴学记录");
+                    values.put(MediaStore.Images.Media.RELATIVE_PATH,Environment.DIRECTORY_PICTURES+"/Accompany Learning");
                     values.put(MediaStore.Images.Media.IS_PENDING,1);
                     job.uri=getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,values);
                     if(job.uri==null)throw new IllegalStateException();
                     job.stream=getContentResolver().openOutputStream(job.uri);
                 } else {
-                    File folder=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),"伴学记录");
+                    File folder=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),"Accompany Learning");
                     if(!folder.isDirectory()&&!folder.mkdirs())throw new IllegalStateException();
                     job.file=new File(folder,name);job.stream=new FileOutputStream(job.file);
                 }
