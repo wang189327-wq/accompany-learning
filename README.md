@@ -1,21 +1,20 @@
-# 伴学记录
-
-[![Source checks](https://github.com/wang189327-wq/accompany-learning/actions/workflows/ci.yml/badge.svg)](https://github.com/wang189327-wq/accompany-learning/actions/workflows/ci.yml)
-[![Node](https://img.shields.io/badge/node-%E2%89%A522-3c873a?logo=nodedotjs&logoColor=white)](package.json)
-[![License](https://img.shields.io/badge/license-MIT-2e7d32)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/wang189327-wq/accompany-learning?label=%E6%9C%80%E6%96%B0%E7%89%88)](https://github.com/wang189327-wq/accompany-learning/releases/latest)
-
-面向互相信任的老师与学生两人的作业管理与学习记录工具，支持安卓手机、安卓平板和网页。任务、作业、学习资料与考试记录通过自己部署的云端同步。
+<h1 align="center">伴学记录</h1>
 
 <p align="center">
-  <img src="docs/images/tasks-phone.png" width="31%" alt="手机端作业清单：未完成与已完成分组、完成时间与操作" />
-  <img src="docs/images/detail-phone.png" width="31%" alt="作业详情：提交内容、学生自评与老师评分" />
-</p>
-<p align="center">
-  <img src="docs/images/tasks-tablet.png" width="56%" alt="平板端双列视图" />
+  <a href="https://github.com/wang189327-wq/accompany-learning/actions/workflows/ci.yml"><img src="https://github.com/wang189327-wq/accompany-learning/actions/workflows/ci.yml/badge.svg" alt="Source checks" /></a>
+  <a href="package.json"><img src="https://img.shields.io/badge/node-%E2%89%A522-3c873a?logo=nodedotjs&logoColor=white" alt="Node 22 或更新版本" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2e7d32" alt="MIT 许可" /></a>
+  <a href="https://github.com/wang189327-wq/accompany-learning/releases/latest"><img src="https://img.shields.io/github/v/release/wang189327-wq/accompany-learning?label=%E6%9C%80%E6%96%B0%E7%89%88" alt="最新发布" /></a>
+  <a href="https://wang189327-wq.github.io/accompany-learning/demo/"><img src="https://img.shields.io/badge/%E5%9C%A8%E7%BA%BF%E4%BD%93%E9%AA%8C-%E6%89%93%E5%BC%80%E6%BC%94%E7%A4%BA-2e7d32" alt="在线体验：打开演示" /></a>
 </p>
 
-<p align="center"><sub>截图使用本机演示数据（内存存储，关闭即清除），不含任何真实学生信息。</sub></p>
+<p align="center">面向互相信任的老师与学生两人的作业管理与学习记录工具，支持安卓手机、安卓平板和网页。任务、作业、学习资料与考试记录通过自己部署的云端同步。</p>
+
+<p align="center">
+  <img src="docs/images/demo.gif" width="360" alt="演示动图：作业清单上下滚动，打开每周循环作业查看提交内容与双方评分，再切到成绩分析" />
+</p>
+
+<p align="center"><sub>动图录制自<a href="https://wang189327-wq.github.io/accompany-learning/demo/">在线演示</a>，使用示例数据（只保存在本机浏览器），不含任何真实学生信息。</sub></p>
 
 ## 为什么做这个
 
@@ -127,7 +126,7 @@ GitHub Actions 在 Windows/Linux 上运行源码检查、自动化测试和云�
 | `android/`                       | 安卓 WebView、文件保存、安装更新和桌面组件 |
 | `desktop-review/`                | 可选电脑 AI 点评服务                       |
 | `scripts/`                       | 配置、测试、演示、网页及更新文件生成       |
-| `docs/`                          | 当前部署与维护教程、界面截图               |
+| `docs/`                          | 当前部署与维护教程、界面截图、演示动图     |
 | `deploy/`                        | 网页部署模板                               |
 | `third-party-notices/`、`pdf-*/` | 第三方预览组件的授权及资源                 |
 
