@@ -11,10 +11,10 @@
 <p>面向互相信任的老师与学生两人的作业管理与学习记录工具，支持安卓手机、安卓平板和网页。任务、作业、学习资料与考试记录通过自己部署的云端同步。</p>
 
 <p align="center">
-  <img src="docs/images/demo.gif" width="360" alt="演示动图：作业清单上下滚动，打开每周循环作业查看提交内容与双方评分，再切到成绩分析" />
+  <img src="docs/images/demo.gif" width="360" alt="演示动图：依次带字幕展示作业清单、日程、作业档案、作业详情、学习资料、成绩分析与成绩趋势、我的页面" />
 </p>
 
-<p align="center"><sub>动图录制自<a href="https://wang189327-wq.github.io/accompany-learning/demo/">在线演示</a>，使用示例数据（只保存在本机浏览器），不含任何真实学生信息。</sub></p>
+<p align="center"><sub>动图录制自<a href="https://wang189327-wq.github.io/accompany-learning/demo/">在线演示</a>，每一步都配有说明字幕；使用示例数据（只保存在本机浏览器），不含任何真实学生信息。</sub></p>
 
 ## 为什么做这个
 

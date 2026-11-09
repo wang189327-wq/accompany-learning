@@ -15,7 +15,7 @@
   // 示例数据的版本。只要改了 buildSample 里的作业、备注或成绩，就必须把这里加一
   // （v3 → v4 …）。否则老访客的 localStorage 还留着旧标记，IndexedDB 不会重写，
   // 页面打开看到的仍是上一次的数据，看起来像演示没更新。
-  const SEED_VERSION = 'v4';
+  const SEED_VERSION = 'v5';
   const DAY = 86400000;
 
   function openDatabase() {
@@ -195,7 +195,87 @@
       6,
     );
 
-    return { tasks, records, exams: buildExams(now) };
+    return {
+      tasks,
+      records,
+      library: [...buildExams(now), ...buildMaterials()],
+      messages: buildMessages(now),
+      preferences: buildPreferences(),
+    };
+  }
+
+  // 学习资料页的示例：一个文件夹加三份资料。与试卷一样文件列表留空，
+  // 点进详情不会出现打不开的假链接，列表和筛选有内容可看。
+  function buildMaterials() {
+    const material = (id, name, subject, uploader, folderId) => ({
+      id: 'demo-' + id,
+      type: 'material',
+      name,
+      subject,
+      uploader,
+      folderId,
+      semesters: ['八年级上学期'],
+      notes: '',
+      files: [],
+    });
+    return [
+      {
+        id: 'demo-folder-notes',
+        type: 'folder',
+        scope: 'materials',
+        name: '错题与笔记',
+        color: '#4a6fa5',
+        semesters: ['八年级上学期'],
+      },
+      material('material-1', '物理电学讲义（老师标注版）', '物理', 'teacher', null),
+      material('material-2', '数学错题本 · 函数与导数', '数学', 'student', 'demo-folder-notes'),
+      material('material-3', '英语朗读示范录音', '英语', 'student', 'demo-folder-notes'),
+    ];
+  }
+
+  // “我的”页消息与学习目标。目标只挑三科，空着的学科保持“—”，
+  // 正好演示表格有数据与无数据并存的样子。
+  function buildMessages(now) {
+    return [
+      {
+        id: 'demo-message-1',
+        targetRole: 'student',
+        kind: 'taskPublished',
+        taskId: 'demo-chem',
+        title: '老师发布了作业',
+        body: '实验报告整理 · 八年级上学期',
+        created: now - 2 * DAY,
+        read: false,
+      },
+      {
+        id: 'demo-message-2',
+        targetRole: 'teacher',
+        kind: 'completion',
+        taskId: 'demo-chinese',
+        round: '2026-11-09',
+        title: '学生完成了作业',
+        body: '古诗词背诵 · 2026-11-09\n作业自评分：9 / 10 分',
+        created: now - 6 * 3600000,
+        read: false,
+      },
+    ];
+  }
+
+  // “我的”页：昵称在 profile:student，目标院校与学习目标在 shared（师生共享）。
+  function buildPreferences() {
+    return [
+      { id: 'profile:student', revision: 1, nickname: '小航' },
+      {
+        id: 'shared',
+        revision: 1,
+        school: '市第一中学',
+        goals: {
+          语文: { full: 120, score: 105, rank: 8 },
+          数学: { full: 120, score: 112, rank: 5 },
+          英语: { full: 120, score: 108, rank: 6 },
+        },
+      },
+    ];
   }
 
   // 成绩趋势读的是试卷条目里的分数，不读附件；文件留空，免得点进去是个打不开的假链接。
@@ -220,6 +300,7 @@
       exam('exam-1', '第一次月考', '数学', 120, 91, 64, 18, 96),
       exam('exam-2', '二次函数单元测验', '数学', 100, 86, 45, 14, 72),
       exam('exam-3', '期中考试', '数学', 120, 103, 26, 7, 35),
+      exam('exam-6', '期末模拟考试', '数学', 120, 112, 8, 3, 16),
       exam('exam-4', '第一次月考', '英语', 120, 88, 63, 22, 118),
       exam('exam-5', '期中考试', '英语', 120, 99, 25, 11, 58),
     ];
@@ -302,13 +383,16 @@
     try {
       const db = await openDatabase();
       if (localStorage.getItem(SEED_FLAG) !== SEED_VERSION) {
-        const { tasks, records, exams } = buildSample(Date.now());
+        const { tasks, records, library, messages, preferences } = buildSample(Date.now());
         await clear(db, 'tasks');
         await clear(db, 'records');
         await clear(db, 'library');
+        await clear(db, 'messages');
         await write(db, 'tasks', tasks);
         await write(db, 'records', records);
-        await write(db, 'library', exams);
+        await write(db, 'library', library);
+        await write(db, 'messages', messages);
+        await write(db, 'preferences', preferences);
         localStorage.setItem(SEED_FLAG, SEED_VERSION);
       }
       db.close();
