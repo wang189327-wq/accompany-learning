@@ -92,7 +92,7 @@
         kind: 'recurring',
         rule: 'day',
         created: now - 13 * DAY,
-        note: '每天一页，错题当天订正。',
+        note: '每天一页，做错的题我们当天一起看。',
       }),
       baseTask({
         id: 'demo-english',
@@ -102,7 +102,7 @@
         rule: 'week',
         weekDays: [1, 3],
         created: now - 21 * DAY,
-        note: '每次默写二十个词，错了抄三遍。',
+        note: '每次二十个词，写错的圈出来，下次再默一遍。',
       }),
       baseTask({
         id: 'demo-chinese',
@@ -111,7 +111,7 @@
         kind: 'recurring',
         rule: 'day',
         created: now - 4 * DAY,
-        note: '背完录一段语音发我。',
+        note: '背熟后录段语音，我听听断句和语气。',
       }),
       baseTask({
         id: 'demo-chem',
