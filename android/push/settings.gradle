@@ -1,0 +1,14 @@
+pluginManagement {
+    repositories { maven { url 'https://maven.aliyun.com/repository/google' }; google(); mavenCentral(); gradlePluginPortal() }
+    resolutionStrategy { eachPlugin { if (requested.id.id == 'com.android.application') useModule('com.android.tools.build:gradle:' + requested.version) } }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        google(); mavenCentral()
+        maven { url 'https://maven.aliyun.com/nexus/content/repositories/releases/' }
+        maven { url 'https://developer.huawei.com/repo/' }
+    }
+}
+rootProject.name = 'StudyPush'

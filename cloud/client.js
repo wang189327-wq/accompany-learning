@@ -159,6 +159,10 @@ const Cloud = (() => {
   }
   function updateWidget(role, tasks, records) {
     try {
+      if (typeof C9Push !== 'undefined' && config && role)
+        globalThis.C9Push.configure(config.endpoint, config.token, role);
+    } catch {}
+    try {
       if (typeof C9Android === 'undefined' || !C9Android.widgetConfigure || !config || !role)
         return;
       C9Android.widgetConfigure(config.endpoint, config.token, role);

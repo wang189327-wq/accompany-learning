@@ -1,0 +1,10 @@
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["mpush:Push"],
+      "Resource": ["acs:mhub:*:REPLACE_ACCOUNT_ID:app/REPLACE_APP_KEY"]
+    }
+  ]
+}

@@ -149,3 +149,8 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 升级原实例前保存配置并备份。上传新主接口ZIP后保留原环境变量、执行角色、OSS和两张表，不新建空表覆盖已有配置。
 
 官方参考：[自定义运行时](https://help.aliyun.com/zh/functioncompute/custom-runtime/)、[函数访问角色](https://help.aliyun.com/zh/functioncompute/grant-function-compute-permissions-to-access-other-alibaba-cloud-services)、[定时触发器](https://help.aliyun.com/zh/functioncompute/time-triggers)、[OSS创建](https://help.aliyun.com/zh/oss/user-guide/create-buckets)。界面及运行时选项可能调整，以实际控制台为准。
+
+## 可选：应用关闭后的系统通知
+
+参见 [系统推送配置](SYSTEM_PUSH.md)。新接口的 `/health` 中 `features.systemPush` 表示接口代码已包含推送能力，不代表平台账号已配置或设备已收到通知。
+新增环境变量 `C9_PUSH_APPS` 为包名到 EMAS AppKey 的JSON映射；`C9_PUSH_JOB_TOKEN` 为独立随机触发码；`C9_PUSH_VIVO_TEST` 为未上架测试设备模式。需额外部署 `system-push-timer.zip` 每分钟触发，且配置华为、vivo厂商通道及 `mpush:Push` 权限。

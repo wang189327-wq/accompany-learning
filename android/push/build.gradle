@@ -1,0 +1,71 @@
+plugins { id 'com.android.application' version '8.9.2' }
+import groovy.json.JsonSlurper
+def config = new Properties()
+def configFile = file('push.local.properties')
+if (configFile.exists()) configFile.withInputStream { config.load(it) }
+def original = file('../AndroidManifest.xml').getText('UTF-8')
+def appId = (original =~ /package="([^"]+)"/)[0][1]
+def originalCode = (original =~ /android:versionCode="(\d+)"/)[0][1] as int
+// Accompany's public release already uses code 7; both variants share one install identity.
+def appVersionCode = Math.max(originalCode + 1, appId == 'app.accompany.learning' ? 8 : 2)
+if (config.getProperty('pushVersionCode')) appVersionCode = Math.max(appVersionCode, config.getProperty('pushVersionCode') as int)
+def appVersionName = (original =~ /android:versionName="([^"]+)"/)[0][1]
+def generatedManifest = file('build/generated/AndroidManifest.xml')
+def text = original.replaceFirst(/package="[^"]+"/, '').replace('<application ', '<application android:name=".PushApplication" ')
+text = text.replace('<uses-sdk', '<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><uses-sdk')
+def tags = '''
+<meta-data android:name="com.alibaba.app.appkey" android:value="${emasAppKey}"/>
+<meta-data android:name="com.alibaba.app.appsecret" android:value="${emasAppSecret}"/>
+<meta-data android:name="com.huawei.hms.client.appid" android:value="appid=${huaweiAppId}"/>
+<meta-data android:name="com.vivo.push.app_id" android:value="${vivoAppId}"/>
+<meta-data android:name="com.vivo.push.api_key" android:value="${vivoAppKey}"/>
+<activity android:name=".PushPopupActivity" android:exported="true" android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
+<receiver android:name=".PushReceiver" android:exported="false"><intent-filter>
+<action android:name="com.alibaba.push2.action.NOTIFICATION_OPENED"/>
+<action android:name="com.alibaba.push2.action.NOTIFICATION_REMOVED"/>
+<action android:name="com.alibaba.sdk.android.push.RECEIVE"/>
+</intent-filter></receiver>
+'''
+text = text.replace('</application>', tags + '</application>')
+generatedManifest.parentFile.mkdirs(); generatedManifest.setText(text, 'UTF-8')
+android {
+    namespace appId
+    compileSdk 35
+    defaultConfig {
+        applicationId appId; minSdk 26; targetSdk 35
+        versionCode appVersionCode; versionName appVersionName
+        manifestPlaceholders = ['emasAppKey':config.getProperty('emasAppKey',''), 'emasAppSecret':config.getProperty('emasAppSecret',''),
+            'huaweiAppId':config.getProperty('huaweiAppId',''), 'vivoAppId':config.getProperty('vivoAppId',''), 'vivoAppKey':config.getProperty('vivoAppKey','')]
+        buildConfigField 'boolean', 'PUSH_CONFIGURED', String.valueOf(config.getProperty('emasAppKey','').length() > 0 && config.getProperty('emasAppSecret','').length() > 0)
+    }
+    buildFeatures { buildConfig true }
+    sourceSets.main { manifest.srcFile generatedManifest; java.srcDirs = ['../src','src']; res.srcDirs = ['../res']; assets.srcDirs = ['../build/assets'] }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+    signingConfigs {
+        release {
+            def root = System.getenv('C9_EXISTING_SIGNING_ROOT')
+            if (root) {
+                def secret = new JsonSlurper().parse(new File(root,'credentials.json'))
+                storeFile new File(root, appId == 'app.accompany.learning' ? 'accompany-release.p12' : 'c9-release.p12')
+                storePassword secret.password; keyPassword secret.password
+                keyAlias appId == 'app.accompany.learning' ? 'accompanyrelease' : 'c9release'
+            }
+        }
+    }
+    buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
+    packaging { resources.excludes += ['META-INF/DEPENDENCIES','META-INF/LICENSE*','META-INF/NOTICE*'] }
+}
+dependencies {
+    implementation 'com.aliyun.ams:alicloud-android-push:3.10.1'
+    implementation 'com.aliyun.ams:alicloud-android-third-push:3.10.1'
+    implementation 'com.aliyun.ams:alicloud-android-third-push-huawei:3.10.1'
+    implementation 'com.aliyun.ams:alicloud-android-third-push-vivo:3.10.1'
+}
+tasks.register('checkPushRelease') {
+    doLast {
+        for (key in ['emasAppKey','emasAppSecret','huaweiAppId','vivoAppId','vivoAppKey'])
+            if (!config.getProperty(key,'')) throw new GradleException('Missing push.local.properties field: ' + key)
+        if (!System.getenv('C9_EXISTING_SIGNING_ROOT')) throw new GradleException('Set original C9_EXISTING_SIGNING_ROOT before release build')
+    }
+}
+tasks.matching { it.name == 'preReleaseBuild' }.configureEach { dependsOn 'checkPushRelease' }

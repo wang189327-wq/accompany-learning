@@ -88,7 +88,7 @@ function createExtras(store, objects, clock, M, fail) {
     }
     return tasks.filter(Boolean);
   }
-  async function snapshot(ts, rs) {
+  async function snapshot(ts, rs, includePreferences = true) {
     const bySubmission = new Map(rs.map((r) => [r.taskId + '|' + (r.recordKey || r.round), r]));
     const read = {};
     for (const who of ['teacher', 'student'])
@@ -117,7 +117,7 @@ function createExtras(store, objects, clock, M, fail) {
           });
         }
     return {
-      preferences: await preferences(),
+      preferences: includePreferences ? await preferences() : [],
       messages: messages.map((m) => ({ ...m, read: read[m.targetRole].has(m.id) })),
     };
   }

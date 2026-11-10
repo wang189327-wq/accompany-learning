@@ -1,4 +1,5 @@
 'use strict';
+const { handlePushRoute } = require('./push-routes.cjs');
 const http = require('node:http'),
   fs = require('node:fs/promises'),
   path = require('node:path'),
@@ -63,6 +64,7 @@ function createServer(options = {}) {
       res.end(JSON.stringify(data));
     };
     try {
+      if (await handlePushRoute(req, res, { ...options, provider, token }, readBody)) return;
       const url = new URL(req.url, 'http://localhost'),
         p = url.pathname;
       if (p === '/health') {
@@ -72,6 +74,7 @@ function createServer(options = {}) {
           version: '1.6.0',
           build: 1,
           features: {
+            systemPush: true,
             storageMonitor: true,
             explicitErrors: true,
             generatedAssets: true,

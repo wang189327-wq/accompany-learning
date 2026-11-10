@@ -57,6 +57,9 @@ public final class MainActivity extends Activity {
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.WHITE);
         web = new WebView(this);
+        try { Class.forName(getPackageName() + ".PushRuntime").getMethod("install", Activity.class, WebView.class).invoke(null, this, web); }
+        catch (ClassNotFoundException ignored) { }
+        catch (Exception e) { android.util.Log.w("StudyPush", "Push bridge unavailable"); }
         root.addView(web, new FrameLayout.LayoutParams(-1,-1));
         setContentView(root);
         root.setOnApplyWindowInsetsListener((view,insets)->{

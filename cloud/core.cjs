@@ -380,6 +380,12 @@ function createService(store, objects, clock = Date.now) {
       );
       return { ok: true, backupKey };
     },
+    async notificationMessages() {
+      const cleaned = await cleanupTests(await store.listTasks());
+      const migrated = await migrateLegacy(cleaned);
+      const tasks = await extras.remind(await automatic(migrated.tasks));
+      return (await extras.snapshot(tasks, [], false)).messages;
+    },
     async snapshot(sinceValue) {
       const cleaned = await cleanupTests(await store.listTasks()),
         migrated = await migrateLegacy(cleaned);

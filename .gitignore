@@ -30,3 +30,13 @@ Thumbs.db
 
 maintenance-results/
 cloud/maintenance-results/
+
+android/push/.gradle/
+
+android/push/build/
+
+android/push/push.local.properties
+
+android/push/local.properties
+
+demo-frames/

@@ -182,3 +182,35 @@ const AndroidUpdates = (() => {
     },
   };
 })();
+
+// System push is available only in the SDK-enabled Android build.
+if (typeof C9Push !== 'undefined') {
+  const panel = document.getElementById('settingsPanel');
+  if (panel) {
+    const button = document.createElement('button');
+    button.id = 'systemPushSettings';
+    button.textContent = '消息通知';
+    button.onclick = () => globalThis.C9Push.openSettings();
+    (panel.querySelector('.actions') || panel).append(button);
+  }
+}
+globalThis.C9OpenPush = (event) => {
+  if (typeof role === 'undefined' || !role || typeof tasks === 'undefined') return false;
+  if (event.targetRole !== role) {
+    toast('此通知属于另一身份，请切换身份后查看消息');
+    return true;
+  }
+  const task = tasks.find((value) => value.id === event.taskId);
+  if (!task) return false;
+  if (!canViewTask(task)) {
+    toast('此作业已不可查看');
+    return true;
+  }
+  selected = task.id;
+  shown = 30;
+  StudyUI.beginTask();
+  renderDetail();
+  if (!document.getElementById('detailDialog').open)
+    document.getElementById('detailDialog').showModal();
+  return true;
+};

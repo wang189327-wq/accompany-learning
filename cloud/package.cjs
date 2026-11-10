@@ -76,6 +76,10 @@ async function packageAll() {
   const entries = [];
   for (const name of [
     'errors.cjs',
+    'push-routes.cjs',
+    'push-service.cjs',
+    'push-rpc.cjs',
+    'push-timer.cjs',
     'storage-monitor.cjs',
     'static-assets.json',
     'lifecycle-maintenance.cjs',
@@ -108,6 +112,9 @@ async function packageAll() {
       { name: 'index.js', bytes: await fs.readFile(path.join(__dirname, 'backup-handler.cjs')) },
     ]),
   };
+  files['system-push-timer.zip'] = zip([
+    { name: 'index.js', bytes: await fs.readFile(path.join(__dirname, 'push-timer.cjs')) },
+  ]);
   const manifest = { created: new Date().toISOString(), files: {} };
   for (const [name, bytes] of Object.entries(files)) {
     await fs.writeFile(path.join(release, name), bytes);
