@@ -13,6 +13,8 @@ const paths = [...new Set(git.stdout.split('\0').filter(Boolean))],
   issues = [];
 for (const rel of paths) {
   if (
+    /(^|\/)(push\.local\.properties|local\.properties)$/.test(rel) ||
+    /^android\/push\/(generated-res|build|\.gradle)\//.test(rel) ||
     /(^|\/)(node_modules|signing|tools|local-data|\.netlify)\//.test(rel) ||
     /\.(p12|pfx|jks|keystore|pem|key|apk)$/.test(rel) ||
     /(^|\/)(credentials\.json|review-worker\.json|public-config\.local\.json|\.env)$/.test(rel)

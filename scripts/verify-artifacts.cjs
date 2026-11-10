@@ -23,7 +23,7 @@ async function scan(zip, label) {
 }
 (async () => {
   const apkBytes = await fs.readFile(
-      path.join(root, 'android/release/accompany-learning-v1.0.apk'),
+      path.join(root, 'android/release/accompany-learning-v1.3.apk'),
     ),
     apk = await loadAsync(apkBytes),
     checks = {};
@@ -87,8 +87,8 @@ async function scan(zip, label) {
   const result = {
     passed: true,
     name: 'Accompany Learning',
-    version: '1.0',
-    versionCode: 7,
+    version: '1.3',
+    versionCode: 8,
     cloudBuild: 1,
     apk: { bytes: apkBytes.length, sha256: hash(apkBytes) },
     checks,

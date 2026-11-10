@@ -34,6 +34,7 @@ cloud/maintenance-results/
 android/push/.gradle/
 
 android/push/build/
+android/push/generated-res/
 
 android/push/push.local.properties
 

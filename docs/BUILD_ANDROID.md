@@ -1,5 +1,7 @@
 # Windows构建安卓APK
 
+华为推送构建请优先按 [v1.3 部署教程](DEPLOY_V1_3.md) 使用 `android/build-push.ps1`。本页普通构建入口用于不包含推送 SDK 的客户端。
+
 需要Node.js22+、PowerShell及官方Android构建工具和JDK。此项目沿用原生Java+WebView构建脚本，无需把私钥上传到GitHub。
 
 1. 在仓库根目录安装依赖：`npm ci`和`npm ci --prefix cloud --ignore-scripts`。
@@ -7,7 +9,7 @@
 3. 执行`powershell -NoProfile -ExecutionPolicy Bypass -File android/setup-tools.ps1`。脚本从Google和Microsoft官方地址下载并校验工具，放在被忽略的`android/tools/`，不修改系统PATH。下载失败时按具体错误检查网络和官方下载地址。
 4. 执行`powershell -NoProfile -ExecutionPolicy Bypass -File android/build-apk.ps1`。
 
-输出为`android/release/accompany-learning-v1.0.apk`及SHA256.txt。构建时会先生成云端网页和PublicConfig.java，后者包含公开的地址配置，不包含访问码。
+输出为`android/release/accompany-learning-v1.3.apk`及SHA256.txt。构建时会先生成云端网页和PublicConfig.java，后者包含公开的地址配置，不包含访问码。
 
 ## 签名
 

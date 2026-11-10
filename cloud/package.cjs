@@ -75,6 +75,10 @@ async function packageAll() {
   await fs.mkdir(release, { recursive: true });
   const entries = [];
   for (const name of [
+    'environment.example.json',
+    'function-permissions.example.json',
+    'function-role-trust.json',
+    'push-permissions.example.json',
     'errors.cjs',
     'push-routes.cjs',
     'push-service.cjs',

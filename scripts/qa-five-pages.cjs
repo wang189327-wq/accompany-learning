@@ -62,7 +62,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const zip = await require('../zip-reader.js').loadAsync(
       await fs.readFile(
         process.env.C9_QA_APK_PATH ||
-          path.join(__dirname, '../android/release/accompany-learning-v1.0.apk'),
+          path.join(__dirname, '../android/release/accompany-learning-v1.3.apk'),
       ),
     );
     const native = await fs.readFile(

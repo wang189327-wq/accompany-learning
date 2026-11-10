@@ -49,3 +49,13 @@
 - SDK本机兼容测试不能代替你的阿里云权限、地域、网络和真实存储验收。
 
 GitHub Actions在Windows/Linux运行同一套源码测试和云端打包，实际运行结果以仓库Actions为准。本机浏览器检查脚本为`scripts/qa-five-pages.cjs`，需要先构建APK及Windows标准路径的Edge；输出在被忽略的`verification-results/`。
+
+# v1.3 发布检查（2026-11-10）
+
+华为推送已接入。发布应用版本 1.3、versionCode 8，包名 `app.accompany.learning`；cloud build 保持 1，未修改云端接口。公开发行构建不含个人平台参数，部署者配置后重新构建。
+
+本次完成：`npm test`（主套件 127 项通过、1 项 Windows 跳过）、lint、格式检查、公开文件检查、带 SDK 的 Release 构建，以及使用虚构参数的 Debug 配置分支构建。数字 AppKey 在 Android 资源中保持字符串类型，华为构建无需提供其他厂商参数。实际 APK 包含设备绑定/接收代码及 EMAS/Huawei SDK 类。
+
+APK 的 232 个资源与当前构建输出逐字节核对通过，PDF 嵌套资源路径检查通过。版本、包身份、签名与 v1.2 兼容性已检查。云端主接口包和定时推送函数有对应源码与部署教程。
+
+参考方法的华为系统弹窗由用户确认已经显示；本次发布不另做 Accompany Learning 新 APK 的实体设备安装或平台送达验收，构建记录仍如实标注 `physicalDeviceTested: false`。未修改真实业务数据，未部署任何人的私人云端。

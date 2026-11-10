@@ -1,24 +1,40 @@
 plugins { id 'com.android.application' version '8.9.2' }
 import groovy.json.JsonSlurper
-def config = new Properties()
+
+// Distribution builds include SDKs but reject deployer credentials.
+def pushConfig = new Properties()
 def configFile = file('push.local.properties')
-if (configFile.exists()) configFile.withInputStream { config.load(it) }
-def original = file('../AndroidManifest.xml').getText('UTF-8')
-def appId = (original =~ /package="([^"]+)"/)[0][1]
-def originalCode = (original =~ /android:versionCode="(\d+)"/)[0][1] as int
-// Accompany's public release already uses code 7; both variants share one install identity.
-def appVersionCode = Math.max(originalCode + 1, appId == 'app.accompany.learning' ? 8 : 2)
-if (config.getProperty('pushVersionCode')) appVersionCode = Math.max(appVersionCode, config.getProperty('pushVersionCode') as int)
-def appVersionName = (original =~ /android:versionName="([^"]+)"/)[0][1]
-def generatedManifest = file('build/generated/AndroidManifest.xml')
-def text = original.replaceFirst(/package="[^"]+"/, '').replace('<application ', '<application android:name=".PushApplication" ')
-text = text.replace('<uses-sdk', '<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><uses-sdk')
-def tags = '''
-<meta-data android:name="com.alibaba.app.appkey" android:value="${emasAppKey}"/>
-<meta-data android:name="com.alibaba.app.appsecret" android:value="${emasAppSecret}"/>
+def distributionBuild = providers.gradleProperty('distribution').orElse('false').get().toBoolean()
+if (distributionBuild && configFile.exists()) throw new GradleException('Distribution build cannot contain push.local.properties')
+if (configFile.exists()) configFile.withInputStream { pushConfig.load(it) }
+def configured = { String key -> !pushConfig.getProperty(key, '').trim().isEmpty() }
+def requiredKeys = ['emasAppKey', 'emasAppSecret', 'huaweiAppId']
+def pushConfigured = requiredKeys.every { configured(it) }
+def vivoConfigured = configured('vivoAppId') && configured('vivoAppKey')
+
+// Resource references keep numeric AppKeys typed as strings. Escape XML and
+// Android resource syntax without logging any SDK credential values.
+def resourceText = { String value ->
+    value.replace('\\', '\\\\').replace("'", "\\'").replace('"', '\\"')
+        .replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+}
+def valuesFile = file('build/generated/push-res/values/push.xml')
+valuesFile.parentFile.mkdirs()
+valuesFile.setText('<resources>' +
+    '<string name="emas_app_key" translatable="false">' + resourceText(pushConfig.getProperty('emasAppKey', '')) + '</string>' +
+    '<string name="emas_app_secret" translatable="false">' + resourceText(pushConfig.getProperty('emasAppSecret', '')) + '</string>' +
+    '</resources>', 'UTF-8')
+
+def originalManifest = file('../AndroidManifest.xml').getText('UTF-8')
+def packageName = (originalManifest =~ /package="([^"]+)"/)[0][1]
+def manifestCode = (originalManifest =~ /android:versionCode="(\d+)"/)[0][1] as int
+def manifestName = (originalManifest =~ /android:versionName="([^"]+)"/)[0][1]
+def releaseCode = pushConfig.getProperty('pushVersionCode', manifestCode.toString()) as int
+if (releaseCode < manifestCode) throw new GradleException('pushVersionCode cannot decrease')
+def components = '''
+<meta-data android:name="com.alibaba.app.appkey" android:value="@string/emas_app_key"/>
+<meta-data android:name="com.alibaba.app.appsecret" android:value="@string/emas_app_secret"/>
 <meta-data android:name="com.huawei.hms.client.appid" android:value="appid=${huaweiAppId}"/>
-<meta-data android:name="com.vivo.push.app_id" android:value="${vivoAppId}"/>
-<meta-data android:name="com.vivo.push.api_key" android:value="${vivoAppKey}"/>
 <activity android:name=".PushPopupActivity" android:exported="true" android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
 <receiver android:name=".PushReceiver" android:exported="false"><intent-filter>
 <action android:name="com.alibaba.push2.action.NOTIFICATION_OPENED"/>
@@ -26,34 +42,57 @@ def tags = '''
 <action android:name="com.alibaba.sdk.android.push.RECEIVE"/>
 </intent-filter></receiver>
 '''
-text = text.replace('</application>', tags + '</application>')
-generatedManifest.parentFile.mkdirs(); generatedManifest.setText(text, 'UTF-8')
+if (vivoConfigured) components += '''
+<meta-data android:name="com.vivo.push.app_id" android:value="${vivoAppId}"/>
+<meta-data android:name="com.vivo.push.api_key" android:value="${vivoAppKey}"/>
+'''
+def generatedManifest = file('build/generated/AndroidManifest.xml')
+def manifestText = originalManifest.replaceFirst(/package="[^"]+"/, '')
+    .replace('<application ', '<application android:name=".PushApplication" ')
+    .replace('<uses-sdk', '<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/><uses-sdk')
+    .replace('</application>', components + '</application>')
+generatedManifest.parentFile.mkdirs()
+generatedManifest.setText(manifestText, 'UTF-8')
+
+def signingRoot = System.getenv('ACCOMPANY_SIGNING_ROOT') ?: System.getenv('C9_EXISTING_SIGNING_ROOT')
 android {
-    namespace appId
+    namespace packageName
     compileSdk 35
     defaultConfig {
-        applicationId appId; minSdk 26; targetSdk 35
-        versionCode appVersionCode; versionName appVersionName
-        manifestPlaceholders = ['emasAppKey':config.getProperty('emasAppKey',''), 'emasAppSecret':config.getProperty('emasAppSecret',''),
-            'huaweiAppId':config.getProperty('huaweiAppId',''), 'vivoAppId':config.getProperty('vivoAppId',''), 'vivoAppKey':config.getProperty('vivoAppKey','')]
-        buildConfigField 'boolean', 'PUSH_CONFIGURED', String.valueOf(config.getProperty('emasAppKey','').length() > 0 && config.getProperty('emasAppSecret','').length() > 0)
+        applicationId packageName
+        minSdk 26
+        targetSdk 35
+        versionCode releaseCode
+        versionName manifestName
+        manifestPlaceholders = [huaweiAppId: pushConfig.getProperty('huaweiAppId', ''),
+            vivoAppId: pushConfig.getProperty('vivoAppId', ''), vivoAppKey: pushConfig.getProperty('vivoAppKey', '')]
+        buildConfigField 'boolean', 'PUSH_CONFIGURED', pushConfigured.toString()
+        buildConfigField 'boolean', 'VIVO_PUSH_CONFIGURED', vivoConfigured.toString()
     }
     buildFeatures { buildConfig true }
-    sourceSets.main { manifest.srcFile generatedManifest; java.srcDirs = ['../src','src']; res.srcDirs = ['../res']; assets.srcDirs = ['../build/assets'] }
-    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+    sourceSets.main {
+        manifest.srcFile generatedManifest
+        java.srcDirs = ['../src', 'src']
+        res.srcDirs = ['../res', 'build/generated/push-res']
+        assets.srcDirs = ['../build/assets']
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
     signingConfigs {
         release {
-            def root = System.getenv('C9_EXISTING_SIGNING_ROOT')
-            if (root) {
-                def secret = new JsonSlurper().parse(new File(root,'credentials.json'))
-                storeFile new File(root, appId == 'app.accompany.learning' ? 'accompany-release.p12' : 'c9-release.p12')
-                storePassword secret.password; keyPassword secret.password
-                keyAlias appId == 'app.accompany.learning' ? 'accompanyrelease' : 'c9release'
+            if (signingRoot) {
+                def signingCredentials = new JsonSlurper().parse(new File(signingRoot, 'credentials.json'))
+                storeFile new File(signingRoot, 'accompany-release.p12')
+                storePassword signingCredentials.password
+                keyPassword signingCredentials.password
+                keyAlias 'accompanyrelease'
             }
         }
     }
     buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
-    packaging { resources.excludes += ['META-INF/DEPENDENCIES','META-INF/LICENSE*','META-INF/NOTICE*'] }
+    packaging { resources.excludes += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE*', 'META-INF/NOTICE*'] }
 }
 dependencies {
     implementation 'com.aliyun.ams:alicloud-android-push:3.10.1'
@@ -63,9 +102,10 @@ dependencies {
 }
 tasks.register('checkPushRelease') {
     doLast {
-        for (key in ['emasAppKey','emasAppSecret','huaweiAppId','vivoAppId','vivoAppKey'])
-            if (!config.getProperty(key,'')) throw new GradleException('Missing push.local.properties field: ' + key)
-        if (!System.getenv('C9_EXISTING_SIGNING_ROOT')) throw new GradleException('Set original C9_EXISTING_SIGNING_ROOT before release build')
+        if (!distributionBuild) requiredKeys.each { key ->
+            if (!configured(key)) throw new GradleException('Missing local push field: ' + key)
+        }
+        if (!signingRoot) throw new GradleException('Set ACCOMPANY_SIGNING_ROOT to original signing directory')
     }
 }
 tasks.matching { it.name == 'preReleaseBuild' }.configureEach { dependsOn 'checkPushRelease' }

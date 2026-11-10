@@ -25,6 +25,10 @@ public final class PushRuntime {
     private static final ExecutorService network = Executors.newSingleThreadExecutor();
     private static volatile String status = "尚未启用";
     private static volatile boolean registering;
+    private static volatile boolean registered;
+    private static volatile boolean vendorRegistrationFailed;
+    private static int registrationFailures;
+    private static boolean registrationStarted;
     private static SharedPreferences prefs() { return application.getSharedPreferences("c9_system_push", 0); }
     public static void initialize(Application app) {
         application = app;
@@ -37,19 +41,57 @@ public final class PushRuntime {
         PushServiceFactory.init(app);
         if (prefs().getBoolean("enabled", false)) register();
     }
+    // The SDK retries registration itself. Only reset after its terminal failure;
+    // a cached device ID must not be mistaken for a registered current process.
     private static synchronized void register() {
         if (!BuildConfig.PUSH_CONFIGURED || registering) return;
-        registering = true; status = "正在注册通知通道";
+        if (registered) {
+            bind(true);
+            return;
+        }
+        if (registrationStarted && registrationFailures < 2) {
+            status = "通知通道正在自动重试";
+            return;
+        }
+        if (registrationStarted) PushServiceFactory.getPushControlService().reset();
+        registrationStarted = true;
+        registrationFailures = 0;
+        registering = true;
+        status = "正在注册通知通道";
         PushServiceFactory.getCloudPushService().register(application, new CommonCallback() {
             @Override public void onSuccess(String value) {
-                registering = false;
-                try { HuaWeiRegister.register(application); VivoRegister.register(application); }
-                catch (RuntimeException ignored) { status = "厂商通道注册失败，请检查平台配置"; }
-                prefs().edit().putString("deviceId", PushServiceFactory.getCloudPushService().getDeviceId()).apply();
+                synchronized (PushRuntime.class) {
+                    registered = true;
+                    registering = false;
+                    registrationFailures = 0;
+                }
+                vendorRegistrationFailed = false;
+                try {
+                    HuaWeiRegister.register(application);
+                    if (BuildConfig.VIVO_PUSH_CONFIGURED) VivoRegister.register(application);
+                } catch (RuntimeException failure) {
+                    vendorRegistrationFailed = true;
+                }
+                String deviceId = PushServiceFactory.getCloudPushService().getDeviceId();
+                if (deviceId == null || deviceId.isEmpty()) {
+                    status = "通知通道未返回设备编号，请稍后重启应用";
+                    return;
+                }
+                prefs().edit().putString("deviceId", deviceId).apply();
                 bind(true);
             }
             @Override public void onFailed(String code, String message) {
-                registering = false; status = "通知通道注册失败（" + code + "）";
+                synchronized (PushRuntime.class) {
+                    if ("PUSH_20110".equals(code)) {
+                        status = "等待通知SDK完成注册";
+                        return;
+                    }
+                    if (registered) return;
+                    registrationFailures++;
+                    registering = registrationFailures < 2;
+                    status = (registering ? "通知通道正在自动重试" : "通知注册失败，请点启用／重试")
+                        + "（" + code + "）";
+                }
             }
         });
     }
@@ -108,7 +150,7 @@ public final class PushRuntime {
                 if (prefs().getString("role", "").isEmpty() || prefs().getString("deviceId", "").isEmpty()) { status = "等待云端连接和角色"; return; }
                 JSONObject result = request(enabled);
                 if (enabled && !result.optBoolean("configured")) throw new IOException("云端尚未配置推送服务");
-                prefs().edit().putBoolean("enabled", enabled).putLong("lastBound", System.currentTimeMillis()).apply(); status = enabled ? "本机推送已绑定" : "本机推送已停止";
+                prefs().edit().putBoolean("enabled", enabled).putLong("lastBound", System.currentTimeMillis()).apply(); status = enabled ? (vendorRegistrationFailed ? "本机已绑定，厂商通道注册异常，请检查配置" : "本机推送已绑定") : "本机推送已停止";
             } catch (Exception e) { status = "通知绑定未完成，请检查云端配置和网络后重试"; }
     }
     private static void bind(boolean enabled) {
@@ -129,13 +171,16 @@ public final class PushRuntime {
                 }
                 p.edit().putString("endpoint", endpoint).putString("token", token).putString("role", role).apply();
                 if (p.getBoolean("enabled", false) && (changed || System.currentTimeMillis() - p.getLong("lastBound", 0) > 300000)) {
-                    if (p.getString("deviceId", "").isEmpty()) activity.runOnUiThread(PushRuntime::register);
+                    if (!registered) activity.runOnUiThread(PushRuntime::register);
                     else performBinding(true);
                 }
             });
         }
         @JavascriptInterface public void openSettings() {
-            activity.runOnUiThread(() -> new AlertDialog.Builder(activity).setTitle("消息通知").setMessage(status + (application.getSystemService(NotificationManager.class).areNotificationsEnabled() ? "" : "\n系统通知权限已关闭") + "\n关闭应用后通知由系统推送通道送达，横幅和锁屏样式取决于系统设置。")
+            activity.runOnUiThread(this::showSettings);
+        }
+        private void showSettings() {
+            new AlertDialog.Builder(activity).setTitle("消息通知").setMessage(status + (application.getSystemService(NotificationManager.class).areNotificationsEnabled() ? "" : "\n系统通知权限已关闭") + "\n关闭应用后通知由系统推送通道送达，横幅和锁屏样式取决于系统设置。")
                 .setPositiveButton("启用／重试", (dialog, which) -> {
                     if (!BuildConfig.PUSH_CONFIGURED) { Toast.makeText(activity, "请先完成 EMAS 和厂商通道配置后重新构建", Toast.LENGTH_LONG).show(); return; }
                     if (Build.VERSION.SDK_INT >= 33 && activity.checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED)
@@ -156,7 +201,7 @@ public final class PushRuntime {
                         Toast.makeText(activity, "设备信息已复制，请粘贴到厂商测试设备配置处", Toast.LENGTH_LONG).show();
                     }
                 }).show())
-                .setNegativeButton("停止本机推送", (dialog, which) -> { Toast.makeText(activity, "正在请求停止，请稍后重新打开查看状态", Toast.LENGTH_LONG).show(); bind(false); }).show());
+                .setNegativeButton("停止本机推送", (dialog, which) -> { Toast.makeText(activity, "正在请求停止，请稍后重新打开查看状态", Toast.LENGTH_LONG).show(); bind(false); }).show();
         }
     }
 }
